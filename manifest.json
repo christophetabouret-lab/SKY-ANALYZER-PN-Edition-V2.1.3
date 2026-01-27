@@ -1,16 +1,25 @@
 {
-  "name": "SKY ANALYZER",
-  "short_name": "SkyAnalyzer",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#0a84ff",
+  "short_name": "Sky Analyzer",
+  "name": "SKY ANALYZER - Pn Edition",
+  "description": "Analyse météo et drone par Tabouret Christophe",
   "icons": [
     {
       "src": "logo_sky.png",
-      "sizes": "1024x1024",
       "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo_sky.png",
+      "type": "image/png",
+      "sizes": "512x512",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#0a84ff",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "scope": "./",
+  "lang": "fr-FR"
 }
