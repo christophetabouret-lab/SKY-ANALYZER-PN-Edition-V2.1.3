@@ -8,11 +8,14 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
-            --bg: #000000; --card: #1c1c1e; --text: #ffffff; --border: #333333; --sub: #8e8e93;
+            --bg: #ffffff; --card: #f2f2f7; --text: #000000; --border: #d1d1d6; --sub: #636366;
             --accent: #0a84ff; --green: #32d74b; --orange: #ff9f0a; --red: #ff453a; 
         }
+        body.dark-mode {
+            --bg: #000000; --card: #1c1c1e; --text: #ffffff; --border: #333333; --sub: #8e8e93;
+        }
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; transition: all 0.3s ease; overflow-x: hidden; }
         
         .app-container { display: flex; flex-direction: column; padding: 15px; gap: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
         
@@ -34,7 +37,8 @@
         .status-card { display: flex; align-items: center; gap: 15px; border-left: 5px solid var(--green); text-align: left; }
         
         .map-item { height: 180px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); }
-        #map { width: 100%; height: 100%; filter: grayscale(0.5) brightness(0.8); }
+        #map { width: 100%; height: 100%; }
+        body.dark-mode #map { filter: grayscale(0.5) brightness(0.8); }
 
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
@@ -47,21 +51,24 @@
         .temp-display { font-size: 40px; font-weight: 900; }
 
         .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-        .f-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; border: 1px solid var(--border); }
+        .f-item { background: rgba(128,128,128,0.1); padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; border: 1px solid var(--border); }
         .f-time { color: var(--accent); font-weight: bold; display: block; margin-bottom: 5px; }
 
+        .theme-toggle { position: absolute; left: 0; top: 20px; background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; }
         .update-btn { position: absolute; right: 0; top: 20px; background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; }
-        .app-footer { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); padding: 15px 0; text-align: center; font-size: 10px; color: var(--sub); border-top: 1px solid var(--border); }
+        
+        .app-footer { position: fixed; bottom: 0; width: 100%; background: var(--card); padding: 15px 0; text-align: center; font-size: 10px; color: var(--sub); border-top: 1px solid var(--border); }
         
         input[type=range] { width: 100%; accent-color: var(--accent); margin-top: 10px; }
         .spinning { animation: rotate 1s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body class="dark-mode">
 
 <div class="app-container">
     <div class="app-header-container">
+        <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
         <button class="update-btn" onclick="fetchWeatherData()"><span id="sync-icon">🔄</span></button>
         <h1 class="app-title"><div id="conn-status" class="status-dot"></div> SKY</h1>
         <span class="app-subtitle">Analyzer Pn Edition</span>
@@ -83,7 +90,7 @@
 
     <div class="map-item">
         <div id="map"></div>
-        <div style="position:absolute; bottom:10px; right:10px; z-index:1000; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:20px; font-size:10px; border:1px solid var(--accent);">
+        <div style="position:absolute; bottom:10px; right:10px; z-index:1000; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:20px; font-size:10px; border:1px solid var(--accent); color: white;">
             <span id="compass-arrow" style="display:inline-block;">➤</span> <span id="compass-text">--°</span>
         </div>
     </div>
@@ -128,12 +135,14 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{y}/{x}{r}.png').addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}/{x}.png').addTo(map);
     let marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 6, fillOpacity: 1, fillColor: 'white', weight: 3 }).addTo(map);
     
     let currentData = { vSol: 0, gSol: 0, tSol: 0, tdSol: 0, clouds: 0, weatherCode: 0, forecasts: [], windDir: 0, rainProb: 0, sunrise: "--", sunset: "--" };
     const wIcons = { 0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 48: "🌫️", 51: "🌦️", 61: "🌧️", 80: "🌦️", 95: "⛈️" };
     const wTexts = { 0: "Dégagé", 1: "Peu nuageux", 2: "Partiellement nuageux", 3: "Couvert", 45: "Brouillard", 48: "Brouillard givrant", 51: "Bruine légère", 61: "Pluie faible", 63: "Pluie modérée", 65: "Pluie forte", 80: "Averses", 95: "Orage" };
+
+    function toggleTheme() { document.body.classList.toggle('dark-mode'); }
 
     async function fetchWeatherData() {
         const icon = document.getElementById('sync-icon'); icon.classList.add('spinning');
@@ -199,7 +208,6 @@
     function runAnalysis() {
         const h = parseInt(document.getElementById('h-slider').value);
         document.getElementById('h-label').innerText = h;
-        
         const vAlt = Math.round(currentData.vSol * Math.pow((h + 10) / 10, 0.22));
         const gAlt = Math.round(vAlt * 1.4);
         
