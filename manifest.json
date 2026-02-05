@@ -1,25 +1,17 @@
 {
-  "short_name": "Sky Analyzer",
-  "name": "SKY ANALYZER - Pn Edition",
-  "description": "Analyse météo et drone par Tabouret Christophe",
+  "name": "Sky Analyzer Pn Edition",
+  "short_name": "SkyWatch",
+  "description": "Système d'analyse météo tactique pour drones",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0a84ff",
   "icons": [
     {
-      "src": "logo_sky.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo_sky.png",
-      "type": "image/png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2503/2503508.png",
       "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "start_url": "./index.html",
-  "display": "standalone",
-  "theme_color": "#0a84ff",
-  "background_color": "#ffffff",
-  "orientation": "portrait",
-  "scope": "./",
-  "lang": "fr-FR"
+  ]
 }
