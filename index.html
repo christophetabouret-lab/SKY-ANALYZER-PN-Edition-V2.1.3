@@ -27,16 +27,17 @@
 
         .status-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: inline-block; margin-right: 8px; }
         .status-dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        
         .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 15px; text-align: center; }
-        .status-card { display: flex; align-items: center; gap: 15px; border-left: 5px solid var(--green); text-align: left; transition: border-color 0.3s ease; }
+        .status-card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; border-left: 5px solid var(--green); text-align: left; transition: border-color 0.3s ease; }
         
         .map-item { height: 180px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); z-index: 10; }
         #map { width: 100%; height: 100%; background: #222; }
 
-        /* Style Recherche Adresse */
-        .search-container { display: flex; gap: 5px; margin-top: 5px; }
-        .search-input { flex-grow: 1; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; color: var(--text); font-size: 14px; outline: none; }
-        .search-btn { background: var(--accent); border: none; color: white; border-radius: 10px; padding: 8px 15px; font-weight: bold; cursor: pointer; }
+        .search-row { display: flex; width: 100%; gap: 5px; margin-top: 5px; }
+        .search-input { flex-grow: 1; background: rgba(128,128,128,0.1); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--text); font-size: 12px; outline: none; }
+        .search-btn { background: var(--accent); border: none; color: white; border-radius: 8px; padding: 6px 10px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .loc-btn { background: var(--green); border: none; color: white; border-radius: 8px; padding: 6px 8px; font-size: 14px; cursor: pointer; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
@@ -71,10 +72,17 @@
     </div>
 
     <div class="card status-card" id="main-status-card">
-        <div id="status-icon" style="font-size: 24px;">🛡️</div>
-        <div>
-            <div id="status-txt" style="font-weight: 900; font-size: 14px; color: var(--green);">INITIALISATION...</div>
-            <div id="addr-label" style="font-size: 11px; color: var(--sub);">Recherche localisation...</div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="status-icon" style="font-size: 24px;">🛡️</div>
+            <div>
+                <div id="status-txt" style="font-weight: 900; font-size: 14px; color: var(--green);">INITIALISATION...</div>
+                <div id="addr-label" style="font-size: 11px; color: var(--sub);">Recherche localisation...</div>
+            </div>
+        </div>
+        <div class="search-row">
+            <input type="text" id="search-input" class="search-input" placeholder="Ville ou adresse...">
+            <button class="search-btn" onclick="searchAddress()">GO</button>
+            <button class="loc-btn" onclick="initLocation()" title="Ma position">📍</button>
         </div>
     </div>
 
@@ -89,11 +97,6 @@
         <div style="position:absolute; bottom:10px; right:10px; z-index:1000; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:20px; font-size:10px; border:1px solid var(--accent); color: white;">
             <span id="compass-arrow" style="display:inline-block;">➤</span> <span id="compass-text">--°</span>
         </div>
-    </div>
-
-    <div class="search-container">
-        <input type="text" id="search-input" class="search-input" placeholder="Entrer une ville ou adresse...">
-        <button class="search-btn" onclick="searchAddress()">OK</button>
     </div>
 
     <div class="stats-grid">
@@ -203,7 +206,6 @@
     async function fetchWeatherData() {
         const syncIcon = document.getElementById('sync-icon'); syncIcon.classList.add('spinning');
         const pos = marker.getLatLng();
-        
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json`);
             const d = await r.json();
@@ -211,20 +213,16 @@
             const displayStr = (addr.city || addr.town || addr.village || "Lieu inconnu") + ", " + (addr.country || "");
             document.getElementById('addr-label').innerText = displayStr;
         } catch(e) { document.getElementById('addr-label').innerText = "Position GPS"; }
-
         await fetchKPIndex();
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=sunrise,sunset&timezone=auto`;
-        
         try {
             const resp = await fetch(url);
             const data = await resp.json();
             const hIdx = new Date().getHours();
-
             currentData.tSol = Math.round(data.current.temperature_2m);
             currentData.humSol = data.current.relative_humidity_2m;
             const gamma = (17.27 * currentData.tSol) / (237.7 + currentData.tSol) + Math.log(currentData.humSol/100);
             currentData.tdSol = Math.round((237.7 * gamma) / (17.27 - gamma));
-
             currentData.vSol = Math.round(data.current.wind_speed_10m);
             currentData.gSol = Math.round(data.current.wind_gusts_10m);
             currentData.windDir = data.current.wind_direction_10m;
@@ -233,7 +231,6 @@
             currentData.sunrise = data.daily.sunrise[0].split('T')[1];
             currentData.sunset = data.daily.sunset[0].split('T')[1];
             currentData.rainProb = data.hourly.precipitation_probability[hIdx] || 0;
-
             currentData.forecasts = [];
             for(let i=1; i<=3; i++) {
                 let idx = hIdx + i;
