@@ -26,10 +26,52 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; transition: all 0.3s ease; overflow-x: hidden; }
         .app-container { display: flex; flex-direction: column; padding: 15px; gap: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
         
-        .app-header-container { text-align: center; padding: 20px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 10px auto; width: 80%; position: relative; }
-        /* Titre réduit pour éviter les icônes */
-        .app-title { letter-spacing: 2px; font-size: 22px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .app-subtitle { font-size: 12px; color: var(--sub); font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
+        /* HEADER OPTIMISÉ POUR SMARTPHONE */
+        .app-header-container { 
+            text-align: center; 
+            padding: 15px 0; 
+            border-bottom: 2px solid var(--accent); 
+            margin: 0 auto 10px auto; 
+            width: 85%;
+        }
+        
+        .app-title { 
+            letter-spacing: 2px; 
+            font-size: 24px; 
+            font-weight: 900; 
+            color: var(--accent); 
+            text-transform: uppercase; 
+            margin: 0 0 10px 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subtitle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 0 5px;
+        }
+
+        .theme-toggle, .update-btn { 
+            background: none; 
+            border: none; 
+            color: var(--accent); 
+            font-size: 20px; 
+            cursor: pointer; 
+            padding: 5px;
+        }
+
+        .app-subtitle { 
+            font-size: 11px; 
+            color: var(--sub); 
+            font-weight: 300; 
+            letter-spacing: 4px; 
+            text-transform: uppercase;
+        }
 
         .status-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: inline-block; }
         .status-dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); }
@@ -57,11 +99,7 @@
 
         .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .f-item { background: rgba(128,128,128,0.1); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid var(--border); }
-        .theme-toggle, .update-btn { position: absolute; top: 20px; background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; z-index: 100; }
-        .theme-toggle { left: 0; }
-        .update-btn { right: 0; }
         
-        /* Footer harmonisé */
         .app-footer { position: fixed; bottom: 0; width: 100%; background: var(--card); padding: 15px 0; text-align: center; font-size: 10px; color: var(--sub); border-top: 1px solid var(--border); z-index: 2000; line-height: 1.5; }
         .license-text { font-weight: 300; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; }
 
@@ -74,10 +112,12 @@
 
 <div class="app-container">
     <div class="app-header-container">
-        <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-        <button class="update-btn" onclick="fetchWeatherData()"><span id="sync-icon">🔄</span></button>
         <h1 class="app-title"><div id="conn-status" class="status-dot"></div> SKY ANALYZER</h1>
-        <span class="app-subtitle">Pn Edition</span>
+        <div class="subtitle-row">
+            <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+            <span class="app-subtitle">Pn Edition</span>
+            <button class="update-btn" onclick="fetchWeatherData()"><span id="sync-icon">🔄</span></button>
+        </div>
     </div>
 
     <div class="card status-card" id="main-status-card">
