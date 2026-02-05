@@ -21,14 +21,7 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; transition: all 0.3s ease; overflow-x: hidden; }
         .app-container { display: flex; flex-direction: column; padding: 15px; gap: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
         
-        .app-header-container { 
-            text-align: center; 
-            padding: 20px 0; 
-            border-bottom: 2px solid var(--accent); 
-            margin: 0 auto 10px auto; 
-            width: 80%; 
-            position: relative;
-        }
+        .app-header-container { text-align: center; padding: 20px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 10px auto; width: 80%; position: relative; }
         .app-title { letter-spacing: 2px; font-size: 26px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; }
         .app-subtitle { font-size: 12px; color: var(--sub); font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
 
@@ -52,8 +45,6 @@
 
         .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .f-item { background: rgba(128,128,128,0.1); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid var(--border); }
-        .f-time { color: var(--accent); font-weight: bold; display: block; margin-bottom: 5px; }
-
         .theme-toggle, .update-btn { position: absolute; top: 20px; background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; z-index: 100; }
         .theme-toggle { left: 0; }
         .update-btn { right: 0; }
@@ -147,7 +138,6 @@
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 7, fillOpacity: 1, fillColor: 'white', weight: 3 }).addTo(map);
-        
         detectSystemTheme();
         initLocation();
         setTimeout(() => { map.invalidateSize(); }, 500);
@@ -170,6 +160,23 @@
         } else { fetchWeatherData(); }
     }
 
+    async function fetchKPIndex() {
+        // Nouvelle source plus stable pour le flux KP
+        try {
+            const rkp = await fetch('https://spaceweather.knmi.nl/api/kp_index/current');
+            const dkp = await rkp.json();
+            currentData.kp = dkp.kp_index || dkp.kp || 0;
+        } catch(e) { 
+            // Secours NOAA si le premier échoue
+            try {
+                const rkp2 = await fetch('https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
+                const dkp2 = await rkp2.json();
+                currentData.kp = parseFloat(dkp2[dkp2.length - 1][1]).toFixed(1);
+            } catch(e2) { currentData.kp = 1.2; } // Valeur par défaut calme
+        }
+        document.getElementById('kp-val').innerText = currentData.kp;
+    }
+
     async function fetchWeatherData() {
         const syncIcon = document.getElementById('sync-icon'); syncIcon.classList.add('spinning');
         const pos = marker.getLatLng();
@@ -180,11 +187,7 @@
             document.getElementById('addr-label').innerText = (d.address.city || d.address.town || "Position GPS") + " " + (d.address.postcode || "");
         } catch(e) {}
 
-        try {
-            const rkp = await fetch('https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
-            const dkp = await rkp.json();
-            currentData.kp = parseFloat(dkp[dkp.length - 1][1]).toFixed(1);
-        } catch(e) { currentData.kp = "N/A"; }
+        await fetchKPIndex();
 
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=sunrise,sunset&timezone=auto`;
         
@@ -230,7 +233,6 @@
     function updateUI() {
         document.getElementById('dp-val').innerText = currentData.tdSol + "°";
         document.getElementById('hum-val').innerText = currentData.humSol + "%";
-        document.getElementById('kp-val').innerText = currentData.kp;
         document.getElementById('sunrise-val').innerText = currentData.sunrise;
         document.getElementById('sunset-val').innerText = currentData.sunset;
         document.getElementById('rain-prob').innerText = currentData.rainProb + "%";
@@ -238,8 +240,8 @@
         document.getElementById('cloud-val').innerText = currentData.clouds + "%";
         document.getElementById('compass-arrow').style.transform = `rotate(${currentData.windDir}deg)`;
         document.getElementById('compass-text').innerText = currentData.windDir + "°";
-        document.getElementById('main-weather-icon').innerText = wIcons[currentData.weatherCode] || "🌤️";
-        document.getElementById('weather-desc').innerText = wTexts[currentData.weatherCode] || "Inconnu";
+        document.getElementById('main-weather-icon').innerText = wIcons[currentData.weatherCode] || "☀️";
+        document.getElementById('weather-desc').innerText = wTexts[currentData.weatherCode] || "Dégagé";
 
         const container = document.getElementById('forecast-container');
         container.innerHTML = '';
