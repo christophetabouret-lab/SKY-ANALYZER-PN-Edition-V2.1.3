@@ -11,65 +11,53 @@
             --bg: #ffffff; --card: #f2f2f7; --text: #000000; --border: #d1d1d6; --sub: #636366;
             --accent: #0a84ff; --green: #32d74b; --orange: #ff9f0a; --red: #ff453a; 
         }
-        body.dark-mode {
-            --bg: #000000; --card: #1c1c1e; --text: #ffffff; --border: #333333; --sub: #8e8e93;
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --border: #333333; --sub: #8e8e93; }
+            #map { filter: grayscale(0.5) brightness(0.8); }
         }
-        
+        body.dark-mode { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --border: #333333; --sub: #8e8e93; }
+        body.dark-mode #map { filter: grayscale(0.5) brightness(0.8); }
+
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; transition: all 0.3s ease; overflow-x: hidden; }
-        
         .app-container { display: flex; flex-direction: column; padding: 15px; gap: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
-        
-        .app-header-container { 
-            text-align: center; 
-            padding: 20px 0; 
-            border-bottom: 2px solid var(--accent); 
-            margin: 0 auto 10px auto; 
-            width: 80%; 
-            position: relative;
-        }
+        .app-header-container { text-align: center; padding: 20px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 10px auto; width: 80%; position: relative; }
         .app-title { letter-spacing: 2px; font-size: 26px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; }
         .app-subtitle { font-size: 12px; color: var(--sub); font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
-
+        
         .status-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: inline-block; margin-right: 8px; }
         .status-dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); }
-
         .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 15px; text-align: center; }
         .status-card { display: flex; align-items: center; gap: 15px; border-left: 5px solid var(--green); text-align: left; }
         
-        .map-item { height: 180px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); }
-        #map { width: 100%; height: 100%; }
-        body.dark-mode #map { filter: grayscale(0.5) brightness(0.8); }
+        /* FIX CARTE : On force une hauteur et un Z-INDEX */
+        .map-item { height: 200px; width: 100%; position: relative; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; z-index: 10; }
+        #map { width: 100%; height: 100%; background: #222; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
         .stat-label { font-size: 9px; color: var(--accent); font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 5px; }
         .stat-val { font-size: 18px; font-weight: 900; }
-
         .wind-display { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .weather-main { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
-        .big-icon { font-size: 60px; transform: scaleX(1.5); display: inline-block; }
         .temp-display { font-size: 40px; font-weight: 900; }
-
         .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .f-item { background: rgba(128,128,128,0.1); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid var(--border); }
-        .f-time { color: var(--accent); font-weight: bold; display: block; margin-bottom: 5px; }
-
-        .theme-toggle { position: absolute; left: 0; top: 20px; background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; }
-        .update-btn { position: absolute; right: 0; top: 20px; background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; }
-        
+        .theme-toggle, .update-btn { position: absolute; top: 20px; background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; z-index: 100; }
+        .theme-toggle { left: 0; }
+        .update-btn { right: 0; }
         .app-footer { position: fixed; bottom: 0; width: 100%; background: var(--card); padding: 15px 0; text-align: center; font-size: 10px; color: var(--sub); border-top: 1px solid var(--border); z-index: 2000; }
-        
         input[type=range] { width: 100%; accent-color: var(--accent); margin-top: 10px; }
-        .spinning { animation: rotate 1s linear infinite; }
+        .spinning { animation: rotate 1s linear infinite; display: inline-block; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="dark-mode">
+<body onload="initApp()">
 
 <div class="app-container">
     <div class="app-header-container">
         <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-        <button class="update-btn" onclick="fetchWeatherData()"><span id="sync-icon">🔄</span></button>
+        <button class="update-btn" onclick="fetchWeatherData()">
+            <span id="sync-icon">🔄</span>
+        </button>
         <h1 class="app-title"><div id="conn-status" class="status-dot"></div> SKY</h1>
         <span class="app-subtitle">Analyzer Pn Edition</span>
     </div>
@@ -78,7 +66,7 @@
         <div id="status-icon" style="font-size: 24px;">🛡️</div>
         <div>
             <div id="status-txt" style="font-weight: 900; font-size: 14px; color: var(--green);">OPÉRATIONNEL</div>
-            <div id="addr-label" style="font-size: 11px; color: var(--sub);">Localisation en cours...</div>
+            <div id="addr-label" style="font-size: 11px; color: var(--sub);">Localisation...</div>
         </div>
     </div>
 
@@ -108,10 +96,10 @@
     </div>
 
     <div class="wind-display">
-        <div class="card"><span class="stat-label">⚓ Vent Sol</span><div class="stat-val"><span id="v-sol-val">--</span> <small class="unit">km/h</small></div></div>
-        <div class="card"><span class="stat-label">🚀 Vent Alt</span><div class="stat-val"><span id="v-alt">--</span> <small class="unit">km/h</small></div></div>
-        <div class="card"><span class="stat-label">⚠️ Rafale Sol</span><div class="stat-val"><span id="g-sol-val">--</span> <small class="unit">km/h</small></div></div>
-        <div class="card"><span class="stat-label">⚠️ Rafale Alt</span><div class="stat-val"><span id="g-alt-val">--</span> <small class="unit">km/h</small></div></div>
+        <div class="card"><span class="stat-label">⚓ Vent Sol</span><div class="stat-val"><span id="v-sol-val">--</span> <small>km/h</small></div></div>
+        <div class="card"><span class="stat-label">🚀 Vent Alt</span><div class="stat-val"><span id="v-alt">--</span> <small>km/h</small></div></div>
+        <div class="card"><span class="stat-label">⚠️ Rafale Sol</span><div class="stat-val"><span id="g-sol-val">--</span> <small>km/h</small></div></div>
+        <div class="card"><span class="stat-label">⚠️ Rafale Alt</span><div class="stat-val"><span id="g-alt-val">--</span> <small>km/h</small></div></div>
     </div>
 
     <div class="stats-grid">
@@ -120,37 +108,49 @@
         <div class="stat-box"><span class="stat-label">Visib.</span><span id="vis-val" class="stat-val">--</span></div>
     </div>
 
-    <div class="card weather-main">
+    <div class="card weather-main" style="display:flex; justify-content: space-around; align-items: center;">
         <div style="text-align:center;">
-            <span id="main-weather-icon" class="big-icon">--</span>
-            <div id="weather-desc" style="font-size:10px; font-weight:bold; color:var(--sub); text-transform:uppercase;">--</div>
+            <span id="main-weather-icon" style="font-size:50px;">--</span>
+            <div id="weather-desc" style="font-size:10px; font-weight:bold; color:var(--sub);">--</div>
         </div>
         <div class="temp-display"><span id="main-temp-val">--</span>°C</div>
     </div>
 
     <div class="card">
-        <span class="stat-label">Prévisions 3 Heures (Temp / Vent / Rosée)</span>
+        <span class="stat-label">Prévisions 3H (Temp / Vent / Rosée)</span>
         <div id="forecast-container" class="forecast-row"></div>
     </div>
 </div>
 
-<footer class="app-footer">
-    © 2026 SKY ANALYZER - PN EDITION - CHRISTOPHE TABOURET
-</footer>
+<footer class="app-footer">© 2026 SKY ANALYZER - PN EDITION</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}/{x}.png').addTo(map);
-    let marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 6, fillOpacity: 1, fillColor: 'white', weight: 3 }).addTo(map);
-    
-    let currentData = { vSol: 0, gSol: 0, tSol: 0, tdSol: 0, humSol:0, clouds: 0, weatherCode: 0, forecasts: [], windDir: 0, rainProb: 0, sunrise: "--", sunset: "--", kp: 0 };
+    let map, marker;
+    let currentData = { vSol:0, gSol:0, tSol:0, tdSol:0, humSol:0, clouds:0, weatherCode:0, forecasts:[], windDir:0, rainProb:0, sunrise:"--", sunset:"--", kp:0 };
     const wIcons = { 0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 48: "🌫️", 51: "🌦️", 61: "🌧️", 80: "🌦️", 95: "⛈️" };
-    const wTexts = { 0: "Dégagé", 1: "Peu nuageux", 2: "Partiellement nuageux", 3: "Couvert", 45: "Brouillard", 48: "Brouillard givrant", 51: "Bruine légère", 61: "Pluie faible", 63: "Pluie modérée", 65: "Pluie forte", 80: "Averses", 95: "Orage" };
+    const wTexts = { 0: "Dégagé", 1: "Peu nuageux", 2: "Partiel", 3: "Couvert", 45: "Brouillard", 51: "Bruine", 61: "Pluie", 80: "Averses", 95: "Orage" };
+
+    function initApp() {
+        // Initialisation forcée de la carte
+        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 7, fillOpacity: 1, fillColor: 'white', weight: 3 }).addTo(map);
+        
+        detectSystemTheme();
+        initLocation();
+        
+        // Fix Leaflet resize bug
+        setTimeout(() => { map.invalidateSize(); }, 500);
+    }
 
     function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+    function detectSystemTheme() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-mode');
+        }
+    }
 
-    // GÉOLOCALISATION INITIALE
     function initLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
@@ -159,49 +159,48 @@
                 map.setView([lat, lon], 14);
                 marker.setLatLng([lat, lon]);
                 fetchWeatherData();
-            }, () => fetchWeatherData());
+            }, () => { 
+                console.log("Géoloc refusée"); 
+                fetchWeatherData(); 
+            });
         } else { fetchWeatherData(); }
     }
 
-    async function reverseGeocode(lat, lon) {
-        try {
-            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-            const data = await resp.json();
-            const addr = data.address;
-            const display = (addr.city || addr.town || addr.village || "Lieu inconnu") + ", " + (addr.postcode || "");
-            document.getElementById('addr-label').innerText = display;
-        } catch (e) { document.getElementById('addr-label').innerText = "Localisation GPS"; }
-    }
-
-    async function fetchKPIndex() {
-        try {
-            const resp = await fetch('https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
-            const data = await resp.json();
-            currentData.kp = parseFloat(data[data.length - 1][1]).toFixed(1);
-        } catch (e) { currentData.kp = "N/A"; }
-    }
-
     async function fetchWeatherData() {
-        const icon = document.getElementById('sync-icon'); icon.classList.add('spinning');
+        const syncIcon = document.getElementById('sync-icon');
+        syncIcon.classList.add('spinning');
+        
         const pos = marker.getLatLng();
         
-        reverseGeocode(pos.lat, pos.lng);
-        await fetchKPIndex();
+        // 1. Géocodage
+        try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json`);
+            const d = await r.json();
+            document.getElementById('addr-label').innerText = (d.address.city || d.address.town || "Position GPS") + " " + (d.address.postcode || "");
+        } catch(e) {}
 
+        // 2. Indice KP
+        try {
+            const rkp = await fetch('https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
+            const dkp = await rkp.json();
+            currentData.kp = dkp[dkp.length - 1][1];
+        } catch(e) { currentData.kp = "N/A"; }
+
+        // 3. Météo
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=sunrise,sunset&timezone=auto`;
         
         try {
-            const response = await fetch(url);
-            const data = await response.json();
+            const resp = await fetch(url);
+            const data = await resp.json();
             const now = new Date();
-            const currentHour = now.getHours();
+            const hIdx = now.getHours();
 
             currentData.tSol = Math.round(data.current.temperature_2m);
             currentData.humSol = data.current.relative_humidity_2m;
-            // Formule de Magnus pour Point de Rosée
-            const a = 17.27; const b = 237.7;
-            const gamma = (a * currentData.tSol) / (b + currentData.tSol) + Math.log(currentData.humSol/100);
-            currentData.tdSol = Math.round((b * gamma) / (a - gamma));
+            
+            // Calcul Rosée
+            const gamma = (17.27 * currentData.tSol) / (237.7 + currentData.tSol) + Math.log(currentData.humSol/100);
+            currentData.tdSol = Math.round((237.7 * gamma) / (17.27 - gamma));
 
             currentData.vSol = Math.round(data.current.wind_speed_10m);
             currentData.gSol = Math.round(data.current.wind_gusts_10m);
@@ -210,21 +209,19 @@
             currentData.weatherCode = data.current.weather_code;
             currentData.sunrise = data.daily.sunrise[0].split('T')[1];
             currentData.sunset = data.daily.sunset[0].split('T')[1];
-            currentData.rainProb = data.hourly.precipitation_probability[currentHour] || 0;
+            currentData.rainProb = data.hourly.precipitation_probability[hIdx] || 0;
 
             currentData.forecasts = [];
             for(let i=1; i<=3; i++) {
-                let idx = currentHour + i;
+                let idx = hIdx + i;
                 if(data.hourly.time[idx]) {
-                    const f_temp = data.hourly.temperature_2m[idx];
-                    const f_hum = data.hourly.relative_humidity_2m[idx];
-                    const f_gamma = (a * f_temp) / (b + f_temp) + Math.log(f_hum/100);
-                    const f_dp = Math.round((b * f_gamma) / (a - f_gamma));
-
+                    const t = data.hourly.temperature_2m[idx];
+                    const hu = data.hourly.relative_humidity_2m[idx];
+                    const gam = (17.27 * t) / (237.7 + t) + Math.log(hu/100);
                     currentData.forecasts.push({
-                        t: Math.round(f_temp),
+                        t: Math.round(t),
                         v: Math.round(data.hourly.wind_speed_10m[idx]),
-                        dp: f_dp,
+                        dp: Math.round((237.7 * gam) / (17.27 - gam)),
                         code: data.hourly.weather_code[idx],
                         time: data.hourly.time[idx].split('T')[1]
                     });
@@ -232,9 +229,11 @@
             }
 
             document.getElementById('conn-status').classList.add('online');
-            updateUI(); runAnalysis();
+            updateUI();
+            runAnalysis();
         } catch (e) { console.error(e); }
-        finally { icon.classList.remove('spinning'); }
+        
+        setTimeout(() => { syncIcon.classList.remove('spinning'); }, 1000);
     }
 
     function updateUI() {
@@ -248,21 +247,18 @@
         document.getElementById('cloud-val').innerText = currentData.clouds + "%";
         document.getElementById('compass-arrow').style.transform = `rotate(${currentData.windDir}deg)`;
         document.getElementById('compass-text').innerText = currentData.windDir + "°";
-        
         document.getElementById('main-weather-icon').innerText = wIcons[currentData.weatherCode] || "🌤️";
         document.getElementById('weather-desc').innerText = wTexts[currentData.weatherCode] || "Inconnu";
 
         const container = document.getElementById('forecast-container');
         container.innerHTML = '';
         currentData.forecasts.forEach(f => {
-            const icon = wIcons[f.code] || "🌤️";
             container.innerHTML += `
                 <div class="f-item">
-                    <span class="f-time">${f.time}</span>
-                    <span style="font-size:18px; display:block; margin:2px 0;">${icon}</span>
-                    <b>${f.t}°C</b><br>
-                    <small>${f.v} km/h</small><br>
-                    <small style="color:var(--accent)">PR: ${f.dp}°</small>
+                    <span style="color:var(--accent)">${f.time}</span><br>
+                    <span style="font-size:18px">${wIcons[f.code]||"🌤️"}</span><br>
+                    <b>${f.t}°</b> | ${f.v}k<br>
+                    <small style="color:var(--orange)">PR:${f.dp}°</small>
                 </div>`;
         });
     }
@@ -270,10 +266,8 @@
     function runAnalysis() {
         const h = parseInt(document.getElementById('h-slider').value);
         document.getElementById('h-label').innerText = h;
-        // Loi de puissance du vent (Hellmann)
         const vAlt = Math.round(currentData.vSol * Math.pow((h + 10) / 10, 0.25));
         const gAlt = Math.round(vAlt * 1.35);
-        
         document.getElementById('v-sol-val').innerText = currentData.vSol;
         document.getElementById('g-sol-val').innerText = currentData.gSol;
         document.getElementById('v-alt').innerText = vAlt;
@@ -287,24 +281,11 @@
             ceilingEl.innerText = Math.max(120, hC) + "m";
             ceilingEl.style.color = hC < 450 ? "var(--red)" : "var(--green)";
         }
-
+        
         const visEl = document.getElementById('vis-val');
         visEl.innerText = currentData.weatherCode >= 45 ? "< 2km" : "> 10km";
         visEl.style.color = currentData.weatherCode >= 45 ? "var(--red)" : "var(--green)";
-        
-        // Alerte si KP élevé (Interférences GPS drone)
-        if(currentData.kp >= 4) {
-            document.getElementById('kp-val').style.color = "var(--red)";
-            document.getElementById('status-txt').innerText = "AVERTISSEMENT KP";
-            document.getElementById('status-txt').style.color = "var(--orange)";
-        } else {
-            document.getElementById('kp-val').style.color = "#00ffcc";
-            document.getElementById('status-txt').innerText = "OPÉRATIONNEL";
-            document.getElementById('status-txt').style.color = "var(--green)";
-        }
     }
-
-    window.onload = () => { initLocation(); };
 </script>
 </body>
 </html>
