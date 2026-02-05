@@ -1,6 +1,6 @@
 {
   "name": "Sky Analyzer Pn Edition",
-  "short_name": "SkyWatch",
+  "short_name": "Sky Analyzer",
   "description": "Système d'analyse météo tactique pour drones",
   "start_url": "index.html",
   "display": "standalone",
