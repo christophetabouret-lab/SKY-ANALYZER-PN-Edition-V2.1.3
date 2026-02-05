@@ -28,12 +28,15 @@
         .status-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: inline-block; margin-right: 8px; }
         .status-dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); }
         .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 15px; text-align: center; }
-        
-        /* Correction de la bordure dynamique */
         .status-card { display: flex; align-items: center; gap: 15px; border-left: 5px solid var(--green); text-align: left; transition: border-color 0.3s ease; }
         
         .map-item { height: 180px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); z-index: 10; }
         #map { width: 100%; height: 100%; background: #222; }
+
+        /* Style Recherche Adresse */
+        .search-container { display: flex; gap: 5px; margin-top: 5px; }
+        .search-input { flex-grow: 1; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; color: var(--text); font-size: 14px; outline: none; }
+        .search-btn { background: var(--accent); border: none; color: white; border-radius: 10px; padding: 8px 15px; font-weight: bold; cursor: pointer; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
@@ -47,8 +50,6 @@
 
         .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .f-item { background: rgba(128,128,128,0.1); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid var(--border); }
-        .f-time { color: var(--accent); font-weight: bold; display: block; margin-bottom: 5px; }
-
         .theme-toggle, .update-btn { position: absolute; top: 20px; background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; z-index: 100; }
         .theme-toggle { left: 0; }
         .update-btn { right: 0; }
@@ -88,6 +89,11 @@
         <div style="position:absolute; bottom:10px; right:10px; z-index:1000; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:20px; font-size:10px; border:1px solid var(--accent); color: white;">
             <span id="compass-arrow" style="display:inline-block;">➤</span> <span id="compass-text">--°</span>
         </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search-input" class="search-input" placeholder="Entrer une ville ou adresse...">
+        <button class="search-btn" onclick="searchAddress()">OK</button>
     </div>
 
     <div class="stats-grid">
@@ -154,6 +160,21 @@
         }
     }
 
+    async function searchAddress() {
+        const query = document.getElementById('search-input').value;
+        if(!query) return;
+        try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+            const d = await r.json();
+            if(d.length > 0) {
+                const lat = d[0].lat; const lon = d[0].lon;
+                map.setView([lat, lon], 14);
+                marker.setLatLng([lat, lon]);
+                fetchWeatherData();
+            }
+        } catch(e) { console.error("Erreur recherche"); }
+    }
+
     function initLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
@@ -182,21 +203,28 @@
     async function fetchWeatherData() {
         const syncIcon = document.getElementById('sync-icon'); syncIcon.classList.add('spinning');
         const pos = marker.getLatLng();
+        
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json`);
             const d = await r.json();
-            document.getElementById('addr-label').innerText = (d.address.city || d.address.town || "Position GPS") + " " + (d.address.postcode || "");
-        } catch(e) {}
+            const addr = d.address;
+            const displayStr = (addr.city || addr.town || addr.village || "Lieu inconnu") + ", " + (addr.country || "");
+            document.getElementById('addr-label').innerText = displayStr;
+        } catch(e) { document.getElementById('addr-label').innerText = "Position GPS"; }
+
         await fetchKPIndex();
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=sunrise,sunset&timezone=auto`;
+        
         try {
             const resp = await fetch(url);
             const data = await resp.json();
             const hIdx = new Date().getHours();
+
             currentData.tSol = Math.round(data.current.temperature_2m);
             currentData.humSol = data.current.relative_humidity_2m;
             const gamma = (17.27 * currentData.tSol) / (237.7 + currentData.tSol) + Math.log(currentData.humSol/100);
             currentData.tdSol = Math.round((237.7 * gamma) / (17.27 - gamma));
+
             currentData.vSol = Math.round(data.current.wind_speed_10m);
             currentData.gSol = Math.round(data.current.wind_gusts_10m);
             currentData.windDir = data.current.wind_direction_10m;
@@ -205,6 +233,7 @@
             currentData.sunrise = data.daily.sunrise[0].split('T')[1];
             currentData.sunset = data.daily.sunset[0].split('T')[1];
             currentData.rainProb = data.hourly.precipitation_probability[hIdx] || 0;
+
             currentData.forecasts = [];
             for(let i=1; i<=3; i++) {
                 let idx = hIdx + i;
