@@ -28,7 +28,9 @@
         .status-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: inline-block; margin-right: 8px; }
         .status-dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); }
         .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 15px; text-align: center; }
-        .status-card { display: flex; align-items: center; gap: 15px; border-left: 5px solid var(--green); text-align: left; }
+        
+        /* Correction de la bordure dynamique */
+        .status-card { display: flex; align-items: center; gap: 15px; border-left: 5px solid var(--green); text-align: left; transition: border-color 0.3s ease; }
         
         .map-item { height: 180px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); z-index: 10; }
         #map { width: 100%; height: 100%; background: #222; }
@@ -45,6 +47,8 @@
 
         .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .f-item { background: rgba(128,128,128,0.1); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid var(--border); }
+        .f-time { color: var(--accent); font-weight: bold; display: block; margin-bottom: 5px; }
+
         .theme-toggle, .update-btn { position: absolute; top: 20px; background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; z-index: 100; }
         .theme-toggle { left: 0; }
         .update-btn { right: 0; }
@@ -65,7 +69,7 @@
         <span class="app-subtitle">Analyzer Pn Edition</span>
     </div>
 
-    <div class="card status-card">
+    <div class="card status-card" id="main-status-card">
         <div id="status-icon" style="font-size: 24px;">🛡️</div>
         <div>
             <div id="status-txt" style="font-weight: 900; font-size: 14px; color: var(--green);">INITIALISATION...</div>
@@ -161,18 +165,16 @@
     }
 
     async function fetchKPIndex() {
-        // Nouvelle source plus stable pour le flux KP
         try {
             const rkp = await fetch('https://spaceweather.knmi.nl/api/kp_index/current');
             const dkp = await rkp.json();
             currentData.kp = dkp.kp_index || dkp.kp || 0;
         } catch(e) { 
-            // Secours NOAA si le premier échoue
             try {
                 const rkp2 = await fetch('https://services.swpc.noaa.gov/products/noaa-estimated-planetary-k-index-1-minute.json');
                 const dkp2 = await rkp2.json();
                 currentData.kp = parseFloat(dkp2[dkp2.length - 1][1]).toFixed(1);
-            } catch(e2) { currentData.kp = 1.2; } // Valeur par défaut calme
+            } catch(e2) { currentData.kp = 1.2; }
         }
         document.getElementById('kp-val').innerText = currentData.kp;
     }
@@ -180,27 +182,21 @@
     async function fetchWeatherData() {
         const syncIcon = document.getElementById('sync-icon'); syncIcon.classList.add('spinning');
         const pos = marker.getLatLng();
-        
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json`);
             const d = await r.json();
             document.getElementById('addr-label').innerText = (d.address.city || d.address.town || "Position GPS") + " " + (d.address.postcode || "");
         } catch(e) {}
-
         await fetchKPIndex();
-
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability&daily=sunrise,sunset&timezone=auto`;
-        
         try {
             const resp = await fetch(url);
             const data = await resp.json();
             const hIdx = new Date().getHours();
-
             currentData.tSol = Math.round(data.current.temperature_2m);
             currentData.humSol = data.current.relative_humidity_2m;
             const gamma = (17.27 * currentData.tSol) / (237.7 + currentData.tSol) + Math.log(currentData.humSol/100);
             currentData.tdSol = Math.round((237.7 * gamma) / (17.27 - gamma));
-
             currentData.vSol = Math.round(data.current.wind_speed_10m);
             currentData.gSol = Math.round(data.current.wind_gusts_10m);
             currentData.windDir = data.current.wind_direction_10m;
@@ -209,7 +205,6 @@
             currentData.sunrise = data.daily.sunrise[0].split('T')[1];
             currentData.sunset = data.daily.sunset[0].split('T')[1];
             currentData.rainProb = data.hourly.precipitation_probability[hIdx] || 0;
-
             currentData.forecasts = [];
             for(let i=1; i<=3; i++) {
                 let idx = hIdx + i;
@@ -242,7 +237,6 @@
         document.getElementById('compass-text').innerText = currentData.windDir + "°";
         document.getElementById('main-weather-icon').innerText = wIcons[currentData.weatherCode] || "☀️";
         document.getElementById('weather-desc').innerText = wTexts[currentData.weatherCode] || "Dégagé";
-
         const container = document.getElementById('forecast-container');
         container.innerHTML = '';
         currentData.forecasts.forEach(f => {
@@ -264,17 +258,24 @@
 
         let statusTxt = document.getElementById('status-txt');
         let statusIcon = document.getElementById('status-icon');
+        let statusCard = document.getElementById('main-status-card');
         let isRainy = currentData.weatherCode >= 51;
         
         if (isRainy) {
             statusTxt.innerText = "VOL IMPOSSIBLE (PLUIE)";
-            statusTxt.style.color = "var(--red)"; statusIcon.innerText = "🚫";
+            statusTxt.style.color = "var(--red)"; 
+            statusCard.style.borderLeftColor = "var(--red)";
+            statusIcon.innerText = "🚫";
         } else if (gAlt > 40 || currentData.kp >= 5) {
             statusTxt.innerText = "VOL DANGEREUX (VENT/KP)";
-            statusTxt.style.color = "var(--orange)"; statusIcon.innerText = "⚠️";
+            statusTxt.style.color = "var(--orange)"; 
+            statusCard.style.borderLeftColor = "var(--orange)";
+            statusIcon.innerText = "⚠️";
         } else {
             statusTxt.innerText = "OPÉRATIONNEL (SÉCURISÉ)";
-            statusTxt.style.color = "var(--green)"; statusIcon.innerText = "🛡️";
+            statusTxt.style.color = "var(--green)"; 
+            statusCard.style.borderLeftColor = "var(--green)";
+            statusIcon.innerText = "🛡️";
         }
 
         const ceilingEl = document.getElementById('ceiling-val');
