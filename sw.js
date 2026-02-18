@@ -2,12 +2,12 @@ const CACHE_NAME = 'sky-analyzer-v3';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
-  './logo_ciel.png',
+  './logo_sky.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
-// Installation : Mise en cache
+// Installation : Mise en cache des fichiers
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Stratégie : Réseau d'abord (pour la météo fraîche), sinon Cache
+// Stratégie de récupération : Réseau d'abord, sinon Cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).catch(() => {
