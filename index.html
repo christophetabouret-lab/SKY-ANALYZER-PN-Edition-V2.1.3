@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SKY ANALYZER - Pn Edition</title>
     
+    <link rel="manifest" href="./manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="./logo_ciel.png">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { 
@@ -20,6 +25,7 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; transition: all 0.3s ease; }
         .app-container { display: flex; flex-direction: column; padding: 15px; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box; }
         
+        /* HEADER 80% */
         .app-header-container { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 20px auto; width: 80%; }
         .app-title { letter-spacing: 2px; font-size: 22px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .pn-edition-sub { font-size: 10px; color: var(--sub); letter-spacing: 3px; text-transform: uppercase; font-weight: bold; margin-top: 2px; display: block; }
@@ -41,29 +47,11 @@
         #map-container { height: 180px; position: relative; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
         #map { width: 100%; height: 100%; }
 
-        /* BOUSSOLE AVEC FLÈCHE */
         .compass-box { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
         .compass-dial { position: relative; width: 100%; height: 100%; border-radius: 50%; }
-        .compass-needle { 
-            position: absolute; 
-            width: 8px; 
-            height: 30px; 
-            top: 10px; 
-            left: 21px; 
-            transition: transform 0.5s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        /* Corps de la flèche */
+        .compass-needle { position: absolute; width: 8px; height: 30px; top: 10px; left: 21px; transition: transform 0.5s ease; display: flex; flex-direction: column; align-items: center; }
         .needle-base { width: 3px; height: 15px; background: var(--red); border-radius: 2px 2px 0 0; }
-        /* Pointe de la flèche */
-        .needle-head { 
-            width: 0; height: 0; 
-            border-left: 5px solid transparent; 
-            border-right: 5px solid transparent; 
-            border-top: 8px solid #333; /* La pointe noire indique la direction où va le vent */
-        }
+        .needle-head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #333; }
         .compass-n { position: absolute; top: 1px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: bold; color: var(--accent); }
 
         .forecast-3h { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
@@ -166,6 +154,9 @@
     const wIconsNight = { 0:"🌙", 1:"🌙", 2:"☁️🌙", 3:"☁️", 45:"🌫️", 51:"🌧️", 61:"🌧️", 80:"🌧️", 95:"⛈️" };
 
     function initApp() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
+        }
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 7, fillOpacity: 1, fillColor: 'white' }).addTo(map);
@@ -190,7 +181,6 @@
 
     function updateCompass() {
         document.getElementById('compass-body').style.transform = `rotate(${-phoneHeading}deg)`;
-        // On soustrait 180 pour que la pointe de la flèche (le noir) pointe vers la destination du vent
         document.getElementById('wind-needle').style.transform = `rotate(${currentData.windDir - 180}deg)`;
     }
 
@@ -203,7 +193,6 @@
     async function fetchWeatherData() {
         document.getElementById('sync-icon').classList.add('spinning');
         const pos = marker.getLatLng();
-        
         try {
             const rkp = await fetch('https://api.taranis-i.com/magnetic/kp-index/current');
             const dkp = await rkp.json();
@@ -211,12 +200,10 @@
         } catch(e) { currentData.kp = "1.2"; }
 
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&hourly=temperature_2m,weather_code,precipitation_probability&timezone=auto`;
-        
         try {
             const resp = await fetch(url);
             const data = await resp.json();
             const h = new Date().getHours();
-            
             currentData.tSol = Math.round(data.current.temperature_2m);
             currentData.humSol = data.current.relative_humidity_2m;
             currentData.vSol = data.current.wind_speed_10m;
@@ -224,7 +211,6 @@
             currentData.weatherCode = data.current.weather_code;
             currentData.sunrise = data.daily.sunrise[0].split('T')[1];
             currentData.sunset = data.daily.sunset[0].split('T')[1];
-
             document.getElementById('kp-val').innerText = currentData.kp;
             document.getElementById('dp-val').innerText = Math.round(currentData.tSol - ((100-currentData.humSol)/5)) + "°";
             document.getElementById('rain-prob').innerText = (data.hourly.precipitation_probability[h] || 0) + "%";
@@ -233,24 +219,20 @@
             document.getElementById('sunset-val').innerText = currentData.sunset;
             document.getElementById('main-temp-val').innerText = currentData.tSol;
             document.getElementById('wind-dir-deg').innerText = currentData.windDir;
-
             const isNight = (new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) < currentData.sunrise || new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) > currentData.sunset);
             let icon = isNight ? wIconsNight[currentData.weatherCode] : wIconsDay[currentData.weatherCode];
             if(isNight && currentData.weatherCode <= 1) icon = getMoonPhase();
             document.getElementById('main-weather-icon').innerText = icon;
-
             const hCont = document.getElementById('forecast-3h'); hCont.innerHTML = '';
             for(let i=1; i<=3; i++) {
                 hCont.innerHTML += `<div class="f3h-item"><div style="color:var(--accent); font-size:10px;">${(h+i)%24}h</div>${wIconsDay[data.hourly.weather_code[h+i]] || "☀️"}<br>${Math.round(data.hourly.temperature_2m[h+i])}°</div>`;
             }
-
             const wCont = document.getElementById('week-container'); wCont.innerHTML = '';
             const days = ['DIM','LUN','MAR','MER','JEU','VEN','SAM'];
             data.daily.time.forEach((t, i) => {
                 let d = new Date(t);
                 wCont.innerHTML += `<div class="week-row"><b>${days[d.getDay()]} ${d.getDate()}</b> <span style="font-size:1.4rem">${wIconsDay[data.daily.weather_code[i]]}</span> <span style="color:var(--red)">${Math.round(data.daily.temperature_2m_max[i])}°</span> <span style="color:var(--accent)">${Math.round(data.daily.temperature_2m_min[i])}°</span></div>`;
             });
-
             updateCompass(); runAnalysis();
         } catch(e) { console.error(e); }
         document.getElementById('sync-icon').classList.remove('spinning');
@@ -263,11 +245,9 @@
         const vDisp = document.getElementById('v-alt-display');
         vDisp.innerText = vAlt + " km/h";
         vDisp.style.color = vAlt > 35 ? "var(--red)" : (vAlt > 25 ? "var(--orange)" : "var(--text)");
-        
         const stTxt = document.getElementById('status-txt');
         const stCard = document.getElementById('main-status-card');
         const kpVal = parseFloat(currentData.kp);
-        
         if (vAlt > 35 || kpVal >= 5) {
             stTxt.innerText = "VENT TROP FORT / ALERTE KP"; stTxt.style.color = "var(--red)"; stCard.style.borderLeftColor = "var(--red)";
         } else if (vAlt > 25 || kpVal >= 4) {
