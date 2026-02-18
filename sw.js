@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sky-analyzer-v2';
+const CACHE_NAME = 'sky-analyzer-v3';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
@@ -7,7 +7,7 @@ const ASSETS_TO_CACHE = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
-// Installation : Mise en cache des fichiers essentiels
+// Installation : Mise en cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Stratégie : Réseau d'abord, sinon Cache
+// Stratégie : Réseau d'abord (pour la météo fraîche), sinon Cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).catch(() => {
