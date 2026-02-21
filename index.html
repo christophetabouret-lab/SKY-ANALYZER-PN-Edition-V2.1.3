@@ -20,6 +20,7 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
         .app-container { display: flex; flex-direction: column; padding: 15px; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box; }
         
+        /* HEADER 80% - STRICT */
         .app-header-container { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 20px auto; width: 80%; }
         .app-title { letter-spacing: 2px; font-size: 22px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; }
         .pn-edition-sub { font-size: 10px; color: var(--sub); letter-spacing: 3px; text-transform: uppercase; font-weight: bold; margin-top: 2px; display: block; }
@@ -53,8 +54,8 @@
         .check-group-title { font-size: 11px; color: var(--accent); font-weight: 900; margin: 15px 0 5px 0; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 4px; }
         .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-weight: 700; color: black; font-size: 13px; }
 
-        .btn-launch-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-        .btn-launch { width: 100%; padding: 18px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; }
+        .btn-launch-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .btn-launch { width: 100%; padding: 16px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; }
 
         .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; }
         
@@ -108,7 +109,7 @@
 
         <div id="map-container">
             <div class="search-overlay">
-                <input type="text" id="search-input" class="search-input" placeholder="Lieu de mission...">
+                <input type="text" id="search-input" class="search-input" placeholder="Chercher zone...">
                 <button class="search-btn" onclick="searchAddress()">🔍</button>
             </div>
             <div id="map"></div>
@@ -159,6 +160,7 @@
             <div class="btn-launch-grid">
                 <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI</button>
                 <button class="btn-launch" onclick="openExternalVAC()">📑 VISUALISEUR CARTE VAC</button>
+                <button class="btn-launch" onclick="openADSB()" style="border-color: var(--red); color: var(--red);">⚡ RADAR BASSE ALTITUDE < 600m (ADSB-EX)</button>
                 <button class="btn-launch" onclick="openExternalNOTAM()">⚠️ NOTAM</button>
                 <button class="btn-launch" onclick="openExternalSUP()">📄 SUP AIP (SIA)</button>
                 <button class="btn-launch" onclick="openExternalAZBA()">⚡ VISUALISEUR RTBA / AZBA</button>
@@ -225,11 +227,9 @@
             document.getElementById('main-temp-val').innerText = Math.round(currentData.tSol);
             document.getElementById('main-weather-icon').innerText = icons[data.current.weather_code] || (isDay ? "☀️" : "🌙");
             
-            // VISIBILITÉ AÉRONAUTIQUE
             let visMeters = data.current.visibility;
             document.getElementById('visibility-val').innerText = (visMeters >= 10000) ? "10km+" : (visMeters/1000).toFixed(1) + "km";
 
-            // PLAFOND AÉRONAUTIQUE (NSC)
             const clouds = data.current.cloud_cover;
             const dp = Math.round(currentData.tSol - ((100-currentData.humSol)/5));
             const baseCalc = Math.round((currentData.tSol - dp) * 122);
@@ -294,7 +294,7 @@
             const lastTime = data.radar.past[data.radar.past.length - 1].time;
             radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${lastTime}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0.65, zIndex: 1000 }).addTo(map);
             btn.innerText = "📡 Radar OFF";
-        } catch(e) { alert("Erreur Radar"); }
+        } catch(e) { alert("Radar Indisponible"); }
     }
 
     function toggleChecklist() {
@@ -309,6 +309,11 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-' + p).classList.add('active');
         if(p === 'now') setTimeout(() => map.invalidateSize(), 200);
+    }
+
+    function openADSB() {
+        const pos = marker.getLatLng();
+        window.open(`https://globe.adsbexchange.com/?lat=${pos.lat}&lon=${pos.lng}&zoom=11&filterAltMax=2000`, "_blank");
     }
 
     function initLocation() { navigator.geolocation.getCurrentPosition(pos => { const p = [pos.coords.latitude, pos.coords.longitude]; marker.setLatLng(p); map.setView(p, 13); fetchWeatherData(); }, () => fetchWeatherData()); }
