@@ -20,13 +20,12 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
         .app-container { display: flex; flex-direction: column; padding: 15px; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box; }
         
-        /* HEADER 80% - STRICT */
         .app-header-container { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 20px auto; width: 80%; }
         .app-title { letter-spacing: 2px; font-size: 22px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; }
         .pn-edition-sub { font-size: 10px; color: var(--sub); letter-spacing: 3px; text-transform: uppercase; font-weight: bold; margin-top: 2px; display: block; }
         
-        .tabs { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .tab-btn { background: none; border: none; color: var(--sub); font-weight: bold; cursor: pointer; padding: 8px 15px; font-size: 0.8rem; border-radius: 20px; }
+        .tabs { display: flex; justify-content: center; gap: 8px; margin-top: 10px; align-items: center; }
+        .tab-btn { background: none; border: none; color: var(--sub); font-weight: bold; cursor: pointer; padding: 8px 12px; font-size: 0.75rem; border-radius: 20px; white-space: nowrap; }
         .tab-btn.active { background: var(--accent); color: white; }
 
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; text-align: center; color: var(--text); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -39,7 +38,7 @@
         #map { width: 100%; height: 100%; background: #ddd; z-index: 1; }
         
         .search-overlay { position: absolute; top: 10px; left: 10px; z-index: 1001; display: flex; width: calc(100% - 80px); gap: 5px; }
-        .search-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .search-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; font-weight: bold; }
         .search-btn { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 
         .compass-box { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 50px; height: 50px; background: var(--overlay); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
@@ -53,16 +52,16 @@
         .modal-content { background: white; width: 90%; max-width: 450px; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; }
         .check-group-title { font-size: 11px; color: var(--accent); font-weight: 900; margin: 15px 0 5px 0; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 4px; }
         .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-weight: 700; color: black; font-size: 13px; }
-        .check-item input { width: 18px; height: 18px; }
 
-        .btn-launch-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .btn-launch-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
         .btn-launch { width: 100%; padding: 18px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; }
 
-        .forecast-3h { display: flex; justify-content: space-around; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
-        .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; font-weight: 900; }
+        .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; }
         
         input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0; }
         #page-week, #page-aero { display: none; }
+        .refresh-spin { animation: spin 1s ease-in-out; }
+        @keyframes spin { from {transform: rotate(0deg);} to {transform: rotate(360deg);} }
     </style>
 </head>
 <body onload="initApp()">
@@ -92,7 +91,7 @@
             <button id="btn-now" class="tab-btn active" onclick="showPage('now')">DIRECT</button>
             <button id="btn-week" class="tab-btn" onclick="showPage('week')">7 JOURS</button>
             <button id="btn-aero" class="tab-btn" onclick="showPage('aero')">MISSION</button>
-            <button onclick="fetchWeatherData()" style="background:none; border:none; cursor:pointer;">🔄</button>
+            <button id="sync-icon" onclick="manualRefresh()" style="background:none; border:none; cursor:pointer; font-size: 1.2rem;">🔄</button>
         </div>
     </div>
 
@@ -131,6 +130,12 @@
         </div>
 
         <div class="stats-grid">
+            <div class="stat-box"><span class="stat-label">Lever</span><span id="sunrise-val" class="stat-val">--</span></div>
+            <div class="stat-box"><span class="stat-label">Endurance</span><span id="flight-est-val" class="stat-val">35 min</span></div>
+            <div class="stat-box"><span class="stat-label">Coucher</span><span id="sunset-val" class="stat-val">--</span></div>
+        </div>
+
+        <div class="stats-grid">
             <div class="stat-box"><span class="stat-label">Plafond</span><span id="cloud-base" class="stat-val">--</span></div>
             <div class="stat-box"><span class="stat-label">Visibilité</span><span id="visibility-val" class="stat-val">--</span></div>
             <div class="stat-box"><span class="stat-label">Indice KP</span><span id="kp-val" class="stat-val">1.2</span></div>
@@ -142,7 +147,7 @@
                 <div style="width: 1px; height: 40px; background: var(--border);"></div>
                 <div><div style="font-size: 22px; font-weight: 900;"><span id="pressure-val">--</span> <span id="pressure-trend">→</span></div><span class="stat-label">hPa (QFE)</span></div>
             </div>
-            <div id="forecast-3h" class="forecast-3h"></div>
+            <div id="forecast-3h" style="display:flex; justify-content:space-around; margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
         </div>
     </div>
 
@@ -152,7 +157,7 @@
         <div class="card">
             <h2 style="font-size: 14px; color: var(--accent); margin-bottom: 15px; text-transform: uppercase;">TERMINAL DE MISSION</h2>
             <div class="btn-launch-grid">
-                <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI (CARTE.GOUV.FR)</button>
+                <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI</button>
                 <button class="btn-launch" onclick="openExternalVAC()">📑 VISUALISEUR CARTE VAC</button>
                 <button class="btn-launch" onclick="openExternalNOTAM()">⚠️ NOTAM</button>
                 <button class="btn-launch" onclick="openExternalSUP()">📄 SUP AIP (SIA)</button>
@@ -169,13 +174,21 @@
 <script>
     let map, marker, radarLayer = null;
     let currentData = { vSol:0, gSol:0, windDir:0, tSol:0, humSol:0 };
-    const wIcons = { 0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 51:"🌦️", 61:"🌧️", 80:"🌧️", 95:"⛈️" };
+    const wIconsDay = { 0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 51:"🌦️", 61:"🌧️", 80:"🌧️", 95:"⛈️" };
+    const wIconsNight = { 0:"🌙", 1:"☁️", 2:"☁️", 3:"☁️", 45:"🌫️", 51:"🌧️", 61:"🌧️", 80:"🌧️", 95:"⛈️" };
 
     function initApp() {
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 6, fillOpacity: 1, fillColor: 'white' }).addTo(map);
         initLocation();
+    }
+
+    function manualRefresh() {
+        const icon = document.getElementById('sync-icon');
+        icon.classList.add('refresh-spin');
+        fetchWeatherData();
+        setTimeout(() => icon.classList.remove('refresh-spin'), 1000);
     }
 
     async function searchAddress() {
@@ -194,9 +207,11 @@
     async function fetchWeatherData() {
         const pos = marker.getLatLng();
         try {
-            const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,weather_code&hourly=temperature_2m,weather_code,precipitation_probability,surface_pressure&daily=sunrise,sunset,weather_code,temperature_2m_max&timezone=auto`);
+            const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,weather_code,is_day,cloud_cover&hourly=temperature_2m,weather_code,precipitation_probability,surface_pressure&daily=sunrise,sunset,weather_code,temperature_2m_max&timezone=auto`);
             const data = await resp.json();
             const h = new Date().getHours();
+            const isDay = data.current.is_day;
+            const icons = isDay ? wIconsDay : wIconsNight;
             
             currentData.vSol = data.current.wind_speed_10m;
             currentData.gSol = data.current.wind_gusts_10m;
@@ -206,9 +221,23 @@
 
             document.getElementById('hum-val').innerText = currentData.humSol + "%";
             document.getElementById('rain-prob').innerText = (data.hourly.precipitation_probability[h] || 0) + "%";
-            document.getElementById('visibility-val').innerText = (data.current.visibility/1000).toFixed(1) + "km";
             document.getElementById('pressure-val').innerText = Math.round(data.current.surface_pressure);
             document.getElementById('main-temp-val').innerText = Math.round(currentData.tSol);
+            document.getElementById('main-weather-icon').innerText = icons[data.current.weather_code] || (isDay ? "☀️" : "🌙");
+            
+            // VISIBILITÉ AÉRONAUTIQUE
+            let visMeters = data.current.visibility;
+            document.getElementById('visibility-val').innerText = (visMeters >= 10000) ? "10km+" : (visMeters/1000).toFixed(1) + "km";
+
+            // PLAFOND AÉRONAUTIQUE (NSC)
+            const clouds = data.current.cloud_cover;
+            const dp = Math.round(currentData.tSol - ((100-currentData.humSol)/5));
+            const baseCalc = Math.round((currentData.tSol - dp) * 122);
+            document.getElementById('dp-val').innerText = dp + "°";
+            document.getElementById('cloud-base').innerText = (clouds < 15) ? "NSC" : baseCalc + "m";
+
+            document.getElementById('sunrise-val').innerText = data.daily.sunrise[0].split('T')[1];
+            document.getElementById('sunset-val').innerText = data.daily.sunset[0].split('T')[1];
             document.getElementById('kp-val').innerText = (1.1 + Math.random() * 0.4).toFixed(1);
 
             const prevP = data.hourly.surface_pressure[h-1] || data.current.surface_pressure;
@@ -218,18 +247,17 @@
 
             const fCont = document.getElementById('forecast-3h'); fCont.innerHTML = '';
             for(let i=1; i<=3; i++) {
-                fCont.innerHTML += `<div style="text-align:center;"><div>${(h+i)%24}h</div><div style="font-size:18px">${wIcons[data.hourly.weather_code[h+i]]||"☀️"}</div><div>${Math.round(data.hourly.temperature_2m[h+i])}°</div></div>`;
+                let fHour = (h + i) % 24;
+                let fIsDay = (fHour > 6 && fHour < 19) ? 1 : 0;
+                let fIcons = fIsDay ? wIconsDay : wIconsNight;
+                fCont.innerHTML += `<div style="text-align:center;"><div>${fHour}h</div><div style="font-size:18px">${fIcons[data.hourly.weather_code[h+i]]||"☀️"}</div><div>${Math.round(data.hourly.temperature_2m[h+i])}°</div></div>`;
             }
 
             const wCont = document.getElementById('week-container'); wCont.innerHTML = '';
             data.daily.time.forEach((t, i) => {
                 let d = new Date(t);
-                wCont.innerHTML += `<div class="week-row"><span>${d.getDate()}/${d.getMonth()+1}</span> <span>${wIcons[data.daily.weather_code[i]]||"☀️"}</span> <span style="color:var(--red)">${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
+                wCont.innerHTML += `<div class="week-row"><span>${d.getDate()}/${d.getMonth()+1}</span> <span>${wIconsDay[data.daily.weather_code[i]]||"☀️"}</span> <span style="color:var(--red)">${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
             });
-            
-            const dp = Math.round(currentData.tSol - ((100-currentData.humSol)/5));
-            document.getElementById('dp-val').innerText = dp + "°";
-            document.getElementById('cloud-base').innerText = Math.round((currentData.tSol - dp) * 122) + "m";
             
             runAnalysis();
             document.getElementById('wind-needle').style.transform = `rotate(${currentData.windDir}deg)`;
@@ -242,23 +270,18 @@
         const factor = Math.pow((h + 10) / 10, 0.14);
         const vAlt = Math.round(currentData.vSol * factor);
         const gAlt = Math.round(currentData.gSol * factor);
-        
-        const vEl = document.getElementById('v-alt-val');
-        const gEl = document.getElementById('v-gust-val');
+        document.getElementById('v-alt-val').innerText = `${vAlt} km/h`;
+        document.getElementById('v-gust-val').innerText = `Rafales: ${gAlt} km/h`;
+        let endurance = Math.max(0, Math.round(35 * (1 - (vAlt/120))));
+        document.getElementById('flight-est-val').innerText = endurance + " min";
         const sTxt = document.getElementById('status-txt');
         const sCard = document.getElementById('status-card');
-        
-        vEl.innerText = `${vAlt} km/h`; gEl.innerText = `Rafales: ${gAlt} km/h`;
-        
         if (vAlt >= 45 || gAlt >= 50) {
             sTxt.innerText = "🚫 DANGER"; sTxt.style.color = "var(--red)"; sCard.style.borderLeftColor = "var(--red)";
-            vEl.style.color = "var(--red)"; gEl.style.color = "var(--red)";
         } else if (vAlt >= 30 || gAlt >= 35) {
             sTxt.innerText = "⚠️ ATTENTION"; sTxt.style.color = "var(--orange)"; sCard.style.borderLeftColor = "var(--orange)";
-            vEl.style.color = "var(--orange)"; gEl.style.color = "var(--orange)";
         } else {
             sTxt.innerText = "🛡️ OPÉRATIONNEL"; sTxt.style.color = "var(--green)"; sCard.style.borderLeftColor = "var(--green)";
-            vEl.style.color = "var(--text)"; gEl.style.color = "var(--sub)";
         }
     }
 
@@ -269,11 +292,7 @@
             const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json');
             const data = await resp.json();
             const lastTime = data.radar.past[data.radar.past.length - 1].time;
-            radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${lastTime}/256/{z}/{x}/{y}/2/1_1.png`, { 
-                opacity: 0.65, 
-                zIndex: 1000 
-            });
-            radarLayer.addTo(map);
+            radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${lastTime}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0.65, zIndex: 1000 }).addTo(map);
             btn.innerText = "📡 Radar OFF";
         } catch(e) { alert("Erreur Radar"); }
     }
