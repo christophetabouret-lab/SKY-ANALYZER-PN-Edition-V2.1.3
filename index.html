@@ -49,13 +49,15 @@
         .btn-radar { bottom: 10px; right: 10px; }
         .btn-check { bottom: 10px; left: 10px; background: var(--green); }
 
+        /* CHECKLIST MODAL */
         #checklist-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 90%; max-width: 450px; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; }
         .check-group-title { font-size: 11px; color: var(--accent); font-weight: 900; margin: 15px 0 5px 0; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 4px; }
         .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-weight: 700; color: black; font-size: 13px; }
 
-        .btn-launch-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .btn-launch { width: 100%; padding: 16px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; }
+        /* BOUTONS UNIFIÉS */
+        .btn-launch { width: 100%; padding: 18px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; transition: 0.2s; margin-bottom: 15px; box-sizing: border-box; }
+        .btn-launch:active { background: var(--accent); color: white; }
 
         .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; }
         
@@ -102,14 +104,14 @@
         </div>
 
         <div class="stats-grid">
-            <div class="stat-box"><span class="stat-label">Pt Rosée</span><span id="dp-val" class="stat-val">--</span></div>
-            <div class="stat-box"><span class="stat-label">Prob. Pluie</span><span id="rain-prob" class="stat-val">--</span></div>
-            <div class="stat-box"><span class="stat-label">Humidité</span><span id="hum-val" class="stat-val">--</span></div>
+            <div class="stat-box"><span id="dp-val" class="stat-val">--</span><span class="stat-label">Pt Rosée</span></div>
+            <div class="stat-box"><span id="rain-prob" class="stat-val">--</span><span class="stat-label">Prob. Pluie</span></div>
+            <div class="stat-box"><span id="hum-val" class="stat-val">--</span><span class="stat-label">Humidité</span></div>
         </div>
 
         <div id="map-container">
             <div class="search-overlay">
-                <input type="text" id="search-input" class="search-input" placeholder="Chercher zone...">
+                <input type="text" id="search-input" class="search-input" placeholder="Zone de mission...">
                 <button class="search-btn" onclick="searchAddress()">🔍</button>
             </div>
             <div id="map"></div>
@@ -120,6 +122,8 @@
             <button id="radar-btn-ui" class="map-btn btn-radar" onclick="toggleRadar()">📡 Radar</button>
             <button class="map-btn btn-check" onclick="toggleChecklist()">📋 Checklist</button>
         </div>
+
+        <button class="btn-launch" onclick="openADSB()">⚡ RADAR AÉRIEN < 600m (ADSB-EX)</button>
 
         <div class="card">
             <span class="stat-label">Altitude d'analyse : <b id="h-label">0</b>m</span>
@@ -160,7 +164,6 @@
             <div class="btn-launch-grid">
                 <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI</button>
                 <button class="btn-launch" onclick="openExternalVAC()">📑 VISUALISEUR CARTE VAC</button>
-                <button class="btn-launch" onclick="openADSB()" style="border-color: var(--red); color: var(--red);">⚡ RADAR BASSE ALTITUDE < 600m (ADSB-EX)</button>
                 <button class="btn-launch" onclick="openExternalNOTAM()">⚠️ NOTAM</button>
                 <button class="btn-launch" onclick="openExternalSUP()">📄 SUP AIP (SIA)</button>
                 <button class="btn-launch" onclick="openExternalAZBA()">⚡ VISUALISEUR RTBA / AZBA</button>
@@ -248,8 +251,7 @@
             const fCont = document.getElementById('forecast-3h'); fCont.innerHTML = '';
             for(let i=1; i<=3; i++) {
                 let fHour = (h + i) % 24;
-                let fIsDay = (fHour > 6 && fHour < 19) ? 1 : 0;
-                let fIcons = fIsDay ? wIconsDay : wIconsNight;
+                let fIcons = (fHour > 6 && fHour < 19) ? wIconsDay : wIconsNight;
                 fCont.innerHTML += `<div style="text-align:center;"><div>${fHour}h</div><div style="font-size:18px">${fIcons[data.hourly.weather_code[h+i]]||"☀️"}</div><div>${Math.round(data.hourly.temperature_2m[h+i])}°</div></div>`;
             }
 
@@ -297,6 +299,11 @@
         } catch(e) { alert("Radar Indisponible"); }
     }
 
+    function openADSB() {
+        const pos = marker.getLatLng();
+        window.open(`https://globe.adsbexchange.com/?lat=${pos.lat}&lon=${pos.lng}&zoom=11&filterAltMax=2000`, "_blank");
+    }
+
     function toggleChecklist() {
         const m = document.getElementById('checklist-modal');
         m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
@@ -309,11 +316,6 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-' + p).classList.add('active');
         if(p === 'now') setTimeout(() => map.invalidateSize(), 200);
-    }
-
-    function openADSB() {
-        const pos = marker.getLatLng();
-        window.open(`https://globe.adsbexchange.com/?lat=${pos.lat}&lon=${pos.lng}&zoom=11&filterAltMax=2000`, "_blank");
     }
 
     function initLocation() { navigator.geolocation.getCurrentPosition(pos => { const p = [pos.coords.latitude, pos.coords.longitude]; marker.setLatLng(p); map.setView(p, 13); fetchWeatherData(); }, () => fetchWeatherData()); }
