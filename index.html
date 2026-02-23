@@ -39,27 +39,28 @@
         #map { width: 100%; height: 100%; background: #ddd; z-index: 1; }
         
         .search-overlay { position: absolute; top: 10px; left: 10px; z-index: 1001; display: flex; width: calc(100% - 80px); gap: 5px; }
-        .search-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; font-weight: bold; }
+        .search-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; font-weight: bold; background: white; }
         .search-btn { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 
-        .compass-box { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 50px; height: 50px; background: var(--overlay); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
-        .wind-needle { position: absolute; width: 4px; height: 30px; top: 10px; left: 23px; transition: transform 0.5s ease; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        /* BOUSSOLE AMÉLIORÉE AVEC TRANSITION */
+        .compass-box { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 60px; height: 60px; background: var(--overlay); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-family: sans-serif; font-size: 10px; font-weight: 900; color: var(--sub); box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s ease-out, border-color 0.3s; }
+        .compass-n { position: absolute; top: 2px; color: var(--red); }
+        .compass-e { position: absolute; right: 4px; }
+        .compass-s { position: absolute; bottom: 2px; }
+        .compass-w { position: absolute; left: 4px; }
+        .wind-needle { position: absolute; width: 10px; height: 34px; top: 50%; left: 50%; margin-top: -17px; margin-left: -5px; transition: transform 0.5s ease; display: flex; flex-direction: column; align-items: center; z-index: 10; }
 
-        .map-btn { position: absolute; z-index: 1000; background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-radar { bottom: 10px; right: 10px; }
-        .btn-check { bottom: 10px; left: 10px; background: var(--green); }
+        /* BARRE DE COUCHES SOUS LA CARTE */
+        .layer-bar { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; }
+        .layer-btn { flex: 1; padding: 14px 0; border-radius: 12px; font-size: 11px; font-weight: 900; cursor: pointer; text-transform: uppercase; border: none; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        .bg-off { background: #2c3e50; }
+        .bg-on { background: var(--green); }
 
-        /* CHECKLIST MODAL */
-        #checklist-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; max-width: 450px; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; }
-        .check-group-title { font-size: 11px; color: var(--accent); font-weight: 900; margin: 15px 0 5px 0; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-        .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-weight: 700; color: black; font-size: 13px; }
-
-        /* BOUTONS UNIFIÉS */
         .btn-launch { width: 100%; padding: 18px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; transition: 0.2s; margin-bottom: 15px; box-sizing: border-box; }
-        .btn-launch:active { background: var(--accent); color: white; }
+        .btn-launch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; }
+        .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; text-align: center; }
+        .week-row span:first-child { text-align: left; text-transform: capitalize; font-size: 1.05rem; }
         
         input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0; }
         #page-week, #page-aero { display: none; }
@@ -69,27 +70,10 @@
 </head>
 <body onload="initApp()">
 
-<div id="checklist-modal">
-    <div class="modal-content">
-        <h2 style="text-align:center; color: var(--accent); font-size: 18px; margin-top:0;">CHECKLIST TACTIQUE</h2>
-        <div class="check-group-title">Administratif & Légal</div>
-        <div class="check-item"><input type="checkbox"> ⚖️ AUTORISATION PRÉFET / MAGISTRAT</div>
-        <div class="check-item"><input type="checkbox"> 🧱 GESTIONNAIRES SOL (ACCÈS)</div>
-        <div class="check-item"><input type="checkbox"> 🛰️ GESTIONNAIRES AÉRIENS (COORD)</div>
-        <div class="check-group-title">Vérifications Techniques</div>
-        <div class="check-item"><input type="checkbox"> 🔋 BATTERIES CHARGÉES</div>
-        <div class="check-item"><input type="checkbox"> 🛰️ GPS FIX (>10 SATS)</div>
-        <div class="check-item"><input type="checkbox"> 💾 CARTE SD INSÉRÉE</div>
-        <div class="check-item"><input type="checkbox"> 🚁 HÉLICES / SERRAGE</div>
-        <div class="check-item"><input type="checkbox"> 📡 RADIO / VIDÉO OK</div>
-        <button onclick="toggleChecklist()" style="width:100%; margin-top:20px; padding:18px; background:var(--green); color:white; border:none; border-radius:12px; font-weight:900;">VALIDER & FERMER</button>
-    </div>
-</div>
-
 <div class="app-container">
     <div class="app-header-container">
         <h1 class="app-title">SKY ANALYZER</h1>
-        <span class="pn-edition-sub">Pn Edition</span>
+        <span class="pn-edition-sub">Pn Edition Tactical</span>
         <div class="tabs">
             <button id="btn-now" class="tab-btn active" onclick="showPage('now')">DIRECT</button>
             <button id="btn-week" class="tab-btn" onclick="showPage('week')">7 JOURS</button>
@@ -111,27 +95,33 @@
 
         <div id="map-container">
             <div class="search-overlay">
-                <input type="text" id="search-input" class="search-input" placeholder="Zone de mission...">
+                <input type="text" id="search-input" class="search-input" placeholder="Ville, adresse...">
                 <button class="search-btn" onclick="searchAddress()">🔍</button>
             </div>
             <div id="map"></div>
-            <div class="compass-box">
-                <div id="compass-body" style="position:relative; width:100%; height:100%;"><span style="position:absolute; top:2px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:900; color:var(--red);">N</span></div>
-                <div id="wind-needle" class="wind-needle"><div style="width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:10px solid var(--accent); margin-bottom:-2px;"></div><div style="width:2px; height:18px; background:var(--accent);"></div></div>
+            <div class="compass-box" id="compass-box" onclick="initCompass()" title="Cliquer pour activer le gyro">
+                <div class="compass-n">N</div>
+                <div class="compass-e">E</div>
+                <div class="compass-s">S</div>
+                <div class="compass-w">W</div>
+                <div id="wind-needle" class="wind-needle">
+                    <div style="width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:12px solid var(--accent);"></div>
+                    <div style="width:3px; height:22px; background:var(--accent); margin-top:-1px;"></div>
+                </div>
             </div>
-            <button id="radar-btn-ui" class="map-btn btn-radar" onclick="toggleRadar()">📡 Radar</button>
-            <button class="map-btn btn-check" onclick="toggleChecklist()">📋 Checklist</button>
         </div>
 
-        <button class="btn-launch" onclick="openADSB()">⚡ RADAR AÉRIEN < 600m (ADSB-EX)</button>
+        <div class="layer-bar">
+            <button id="openaip-btn-ui" class="layer-btn bg-on" onclick="toggleOpenAIP()">✈️ ZONES: ON</button>
+            <button id="radar-btn-ui" class="layer-btn bg-off" onclick="toggleRadar()">🌧️ PLUIE: OFF</button>
+            <button id="btn-adsb" class="layer-btn bg-off" onclick="openADSB()">⚡ AÉRIEN: OFF</button>
+        </div>
 
         <div class="card">
             <span class="stat-label">Altitude d'analyse : <b id="h-label">0</b>m</span>
             <input type="range" id="h-slider" min="0" max="250" value="0" step="5" oninput="runAnalysis()">
-            <div id="v-alt-display">
-                <div style="font-size: 32px; font-weight: 900;" id="v-alt-val">-- km/h</div>
-                <div style="font-size: 16px; font-weight: 800;" id="v-gust-val">Rafales: -- km/h</div>
-            </div>
+            <div id="v-alt-val" style="font-size: 32px; font-weight: 900;">-- km/h</div>
+            <div id="v-gust-val" style="font-size: 16px; font-weight: 800; color: var(--sub);">Rafales: -- km/h</div>
         </div>
 
         <div class="stats-grid">
@@ -143,127 +133,307 @@
         <div class="stats-grid">
             <div class="stat-box"><span class="stat-label">Plafond</span><span id="cloud-base" class="stat-val">--</span></div>
             <div class="stat-box"><span class="stat-label">Visibilité</span><span id="visibility-val" class="stat-val">--</span></div>
-            <div class="stat-box"><span class="stat-label">Indice KP</span><span id="kp-val" class="stat-val">1.2</span></div>
+            <div class="stat-box"><span class="stat-label">Indice KP</span><span id="kp-val" class="stat-val">--</span></div>
         </div>
-
+        
         <div class="card">
-            <div style="display:flex; justify-content:space-around; align-items:center; padding-bottom:10px;">
-                <div><span id="main-weather-icon" style="font-size: 32px;">☀️</span><div style="font-size: 22px; font-weight: 900;"><span id="main-temp-val">--</span>°C</div></div>
-                <div style="width: 1px; height: 40px; background: var(--border);"></div>
-                <div><div style="font-size: 22px; font-weight: 900;"><span id="pressure-val">--</span> <span id="pressure-trend">→</span></div><span class="stat-label">hPa (QFE)</span></div>
+            <div style="display:flex; justify-content:space-around; align-items:center;">
+                <div><span id="main-weather-icon" style="font-size: 26px; margin-right:5px;">☀️</span><span id="main-temp-val" style="font-size: 22px; font-weight: 900;">--</span>°C</div>
+                <div style="width: 1px; height: 30px; background: var(--border);"></div>
+                <div><span id="pressure-val" style="font-size: 22px; font-weight: 900;">--</span><span class="stat-label">hPa (QFE)</span></div>
             </div>
             <div id="forecast-3h" style="display:flex; justify-content:space-around; margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
         </div>
     </div>
 
-    <div id="page-week"><div class="card" style="padding:10px;"><div id="week-container"></div></div></div>
+    <div id="page-week"><div class="card" id="week-container"></div></div>
 
     <div id="page-aero">
         <div class="card">
             <h2 style="font-size: 14px; color: var(--accent); margin-bottom: 15px; text-transform: uppercase;">TERMINAL DE MISSION</h2>
+            
+            <button class="btn-launch" style="background: var(--accent); color: white;" onclick="runExpertScan()">🧠 ANALYSE TACTIQUE IA</button>
+            <div id="analysis-report" style="display:none; text-align: left; background: #000; color: #34c759; padding: 15px; border-radius: 12px; font-family: monospace; font-size: 11px; border-left: 4px solid var(--accent); line-height: 1.4; white-space: pre-wrap; overflow-y: auto; max-height: 400px; margin-bottom: 15px;"><div id="report-content">Prêt pour acquisition...</div></div>
+            
             <div class="btn-launch-grid">
-                <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI</button>
-                <button class="btn-launch" onclick="openExternalVAC()">📑 VISUALISEUR CARTE VAC</button>
-                <button class="btn-launch" onclick="openExternalNOTAM()">⚠️ NOTAM</button>
-                <button class="btn-launch" onclick="openExternalSUP()">📄 SUP AIP (SIA)</button>
-                <button class="btn-launch" onclick="openExternalAZBA()">⚡ VISUALISEUR RTBA / AZBA</button>
+                <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI (ZICAD)</button>
+                <button class="btn-launch" onclick="openExternalVAC()">📑 CARTES VAC</button>
+                <button class="btn-launch" onclick="openSofiaNotam()">⚠️ NOTAM (SOFIA)</button>
+                <button class="btn-launch" onclick="openExternalSUP()">📄 SUP AIP</button>
+                <button class="btn-launch" onclick="openExternalAZBA()">⚡ AZBA (RTBA LIVE)</button>
                 <button class="btn-launch" onclick="openExternalCarto()">🗼 CARTORADIO</button>
-                <button class="btn-launch" onclick="openExternalOpenAIP()">🌐 CONSULTATION ESPACES AÉRIENS</button>
+                <button class="btn-launch" onclick="openExternalOpenAIP()">🌐 OPENAIP</button>
+                <button class="btn-launch" style="border-color: var(--orange);" onclick="openVisualDrone()">🚁 VISUALDRONE</button>
             </div>
         </div>
     </div>
-    <footer style="text-align:center; font-size:9px; color:var(--sub); padding: 20px;">© 2026 SKY ANALYZER - PN EDITION - Tous droits réservés Christab-lab</footer>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let map, marker, radarLayer = null;
-    let currentData = { vSol:0, gSol:0, windDir:0, tSol:0, humSol:0 };
-    const wIconsDay = { 0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 51:"🌦️", 61:"🌧️", 80:"🌧️", 95:"⛈️" };
-    const wIconsNight = { 0:"🌙", 1:"☁️", 2:"☁️", 3:"☁️", 45:"🌫️", 51:"🌧️", 61:"🌧️", 80:"🌧️", 95:"⛈️" };
+    const GROQ_KEY = "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";
+    const OPENAIP_KEY = "c48668cbe2f43b3c0fcd2183bab71089";
+
+    let map, marker, openAipLayer = null;
+    let currentData = { vSol:0, gSol:0, tSol:0, humSol:0, dp:0, kp:1.2 };
+    
+    // Variables globales Radar Nuages/Pluie
+    let radarLayer = null;
+    let radarInterval = null;
+    let radarActive = false;
+
+    // Variables globales Radar Aérien
+    let adsbLayer = L.layerGroup();
+    let adsbInterval = null;
+    let adsbActive = false;
+
+    function getDecodedAlt(limit) {
+        if (!limit || (limit.value === 0 && limit.referenceDatum === 0)) return "SFC";
+        if (limit.unit === 6) return "FL" + limit.value;
+        let u = limit.unit === 1 ? "ft" : (limit.unit === 0 ? "m" : "");
+        let r = limit.referenceDatum === 0 ? "AGL" : (limit.referenceDatum === 1 ? "AMSL" : "");
+        return `${limit.value}${u} ${r}`.trim();
+    }
+
+    function getWeatherIcon(code, isNight = false) {
+        if(code === 0) return isNight ? '🌙' : '☀️';
+        if(code === 1 || code === 2) return isNight ? '☁️' : '⛅';
+        if(code === 3) return '☁️';
+        if(code >= 45 && code <= 48) return '🌫️';
+        if(code >= 51 && code <= 67) return '🌧️';
+        if(code >= 71 && code <= 77) return '❄️';
+        if(code >= 80 && code <= 82) return '🌧️';
+        if(code >= 95) return '⛈️';
+        return '☁️';
+    }
 
     function initApp() {
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        openAipLayer = L.tileLayer('https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey=' + OPENAIP_KEY, {
+            subdomains: ['a', 'b', 'c'],
+            maxZoom: 14,
+            opacity: 0.7,
+            zIndex: 1000
+        }).addTo(map);
+
         marker = L.circleMarker([43.83, 4.36], { color: '#0a84ff', radius: 6, fillOpacity: 1, fillColor: 'white' }).addTo(map);
         initLocation();
+
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchAddress();
+        });
     }
 
-    function manualRefresh() {
-        const icon = document.getElementById('sync-icon');
-        icon.classList.add('refresh-spin');
-        fetchWeatherData();
-        setTimeout(() => icon.classList.remove('refresh-spin'), 1000);
-    }
-
-    async function searchAddress() {
-        const query = document.getElementById('search-input').value;
-        if (!query) return;
-        try {
-            const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-            const res = await resp.json();
-            if (res.length > 0) {
-                const p = [parseFloat(res[0].lat), parseFloat(res[0].lon)];
-                marker.setLatLng(p); map.setView(p, 13); fetchWeatherData();
+    // FONCTION ACTIVATION GYROSCOPE
+    function initCompass() {
+        const box = document.getElementById('compass-box');
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(permissionState => {
+                if (permissionState === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                    box.style.borderColor = "var(--green)";
+                } else {
+                    alert("Accès boussole refusé.");
+                }
+            }).catch(console.error);
+        } else {
+            if (window.DeviceOrientationAbsoluteEvent) {
+                window.addEventListener("deviceorientationabsolute", handleOrientation);
+            } else {
+                window.addEventListener("deviceorientation", handleOrientation);
             }
-        } catch (e) { console.error(e); }
+            box.style.borderColor = "var(--green)";
+        }
+    }
+
+    function handleOrientation(event) {
+        let heading = null;
+        if (event.webkitCompassHeading != null) {
+            heading = event.webkitCompassHeading;
+        } else if (event.alpha != null) {
+            heading = 360 - event.alpha;
+        }
+        if (heading !== null) {
+            document.getElementById('compass-box').style.transform = `rotate(${-heading}deg)`;
+        }
+    }
+
+    function toggleOpenAIP() {
+        const btn = document.getElementById('openaip-btn-ui');
+        if (openAipLayer) {
+            map.removeLayer(openAipLayer);
+            openAipLayer = null;
+            btn.innerText = "✈️ ZONES: OFF";
+            btn.classList.remove('bg-on');
+            btn.classList.add('bg-off');
+        } else {
+            openAipLayer = L.tileLayer('https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey=' + OPENAIP_KEY, {
+                subdomains: ['a', 'b', 'c'],
+                maxZoom: 14,
+                opacity: 0.7,
+                zIndex: 1000
+            }).addTo(map);
+            btn.innerText = "✈️ ZONES: ON";
+            btn.classList.remove('bg-off');
+            btn.classList.add('bg-on');
+        }
+    }
+
+    async function toggleRadar() {
+        const btn = document.getElementById('radar-btn-ui');
+        if (radarActive) { 
+            radarActive = false;
+            clearInterval(radarInterval);
+            if (radarLayer) {
+                map.removeLayer(radarLayer); 
+                radarLayer = null; 
+            }
+            btn.innerText = "🌧️ PLUIE: OFF"; 
+            btn.classList.remove('bg-on');
+            btn.classList.add('bg-off');
+            return; 
+        }
+        
+        radarActive = true;
+        btn.innerText = "🌧️ PLUIE: ON";
+        btn.classList.remove('bg-off');
+        btn.classList.add('bg-on');
+        
+        fetchRadar();
+        radarInterval = setInterval(fetchRadar, 10 * 60 * 1000); 
+    }
+
+    async function fetchRadar() {
+        if (!radarActive) return;
+        try {
+            const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+            const data = await resp.json();
+            
+            if (!data.radar || !data.radar.past || data.radar.past.length === 0) return;
+            
+            const lastPath = data.radar.past[data.radar.past.length - 1].path;
+            
+            if (radarLayer) {
+                map.removeLayer(radarLayer);
+            }
+            
+            radarLayer = L.tileLayer(`https://tilecache.rainviewer.com${lastPath}/256/{z}/{x}/{y}/2/1_1.png`, { 
+                opacity: 0.65, 
+                zIndex: 1001,
+                maxNativeZoom: 7 
+            }).addTo(map);
+        } catch(e) { 
+            console.error("Erreur actualisation pluie", e);
+        }
+    }
+
+    async function fetchRealKP() {
+        try {
+            const resp = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+            const data = await resp.json();
+            const lastEntry = data[data.length - 1];
+            const kpValue = parseFloat(lastEntry[1]);
+            
+            const kpEl = document.getElementById('kp-val');
+            kpEl.innerText = kpValue.toFixed(1);
+            
+            if (kpValue >= 5) {
+                kpEl.style.color = "var(--red)";
+            } else if (kpValue >= 4) {
+                kpEl.style.color = "var(--orange)";
+            } else {
+                kpEl.style.color = "inherit"; 
+            }
+        } catch(e) {
+            console.error("Erreur de récupération du KP", e);
+            document.getElementById('kp-val').innerText = "N/A";
+        }
     }
 
     async function fetchWeatherData() {
-        const pos = marker.getLatLng();
+        const p = marker.getLatLng();
         try {
-            const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,weather_code,is_day,cloud_cover&hourly=temperature_2m,weather_code,precipitation_probability,surface_pressure&daily=sunrise,sunset,weather_code,temperature_2m_max&timezone=auto`);
-            const data = await resp.json();
+            fetchRealKP();
+
+            // AJOUT DU PARAMÈTRE is_day pour le calcul astronomique exact
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
+            const d = await r.json();
             const h = new Date().getHours();
-            const isDay = data.current.is_day;
-            const icons = isDay ? wIconsDay : wIconsNight;
             
-            currentData.vSol = data.current.wind_speed_10m;
-            currentData.gSol = data.current.wind_gusts_10m;
-            currentData.windDir = data.current.wind_direction_10m;
-            currentData.tSol = data.current.temperature_2m;
-            currentData.humSol = data.current.relative_humidity_2m;
-
-            document.getElementById('hum-val').innerText = currentData.humSol + "%";
-            document.getElementById('rain-prob').innerText = (data.hourly.precipitation_probability[h] || 0) + "%";
-            document.getElementById('pressure-val').innerText = Math.round(data.current.surface_pressure);
+            // LA NUIT EST MAINTENANT DICTÉE PAR L'ASTRONOMIE ET NON PLUS UNE HEURE FIXE
+            let isNowNight = d.current.is_day === 0;
+            
+            currentData.vSol = d.current.wind_speed_10m;
+            currentData.gSol = d.current.wind_gusts_10m;
+            currentData.tSol = d.current.temperature_2m;
+            currentData.humSol = d.current.relative_humidity_2m;
+            currentData.dp = Math.round(d.current.dew_point_2m);
+            
+            document.getElementById('main-weather-icon').innerText = getWeatherIcon(d.current.weather_code, isNowNight);
             document.getElementById('main-temp-val').innerText = Math.round(currentData.tSol);
-            document.getElementById('main-weather-icon').innerText = icons[data.current.weather_code] || (isDay ? "☀️" : "🌙");
+            document.getElementById('dp-val').innerText = currentData.dp + "°";
+            document.getElementById('hum-val').innerText = currentData.humSol + "%";
+            document.getElementById('rain-prob').innerText = (d.hourly.precipitation_probability[h] || 0) + "%";
+            document.getElementById('pressure-val').innerText = Math.round(d.current.surface_pressure);
+            document.getElementById('visibility-val').innerText = (d.current.visibility/1000).toFixed(1) + "km";
+            document.getElementById('cloud-base').innerText = (d.current.cloud_cover < 15) ? "NSC" : Math.round((currentData.tSol - currentData.dp) * 122) + "m";
+            document.getElementById('sunrise-val').innerText = d.daily.sunrise[0].split('T')[1];
+            document.getElementById('sunset-val').innerText = d.daily.sunset[0].split('T')[1];
             
-            let visMeters = data.current.visibility;
-            document.getElementById('visibility-val').innerText = (visMeters >= 10000) ? "10km+" : (visMeters/1000).toFixed(1) + "km";
-
-            const clouds = data.current.cloud_cover;
-            const dp = Math.round(currentData.tSol - ((100-currentData.humSol)/5));
-            const baseCalc = Math.round((currentData.tSol - dp) * 122);
-            document.getElementById('dp-val').innerText = dp + "°";
-            document.getElementById('cloud-base').innerText = (clouds < 15) ? "NSC" : baseCalc + "m";
-
-            document.getElementById('sunrise-val').innerText = data.daily.sunrise[0].split('T')[1];
-            document.getElementById('sunset-val').innerText = data.daily.sunset[0].split('T')[1];
-            document.getElementById('kp-val').innerText = (1.1 + Math.random() * 0.4).toFixed(1);
-
-            const prevP = data.hourly.surface_pressure[h-1] || data.current.surface_pressure;
-            const trendEl = document.getElementById('pressure-trend');
-            trendEl.innerText = data.current.surface_pressure > prevP + 0.2 ? "↑" : (data.current.surface_pressure < prevP - 0.2 ? "↓" : "→");
-            trendEl.style.color = trendEl.innerText === "↑" ? "var(--green)" : (trendEl.innerText === "↓" ? "var(--red)" : "var(--accent)");
-
             const fCont = document.getElementById('forecast-3h'); fCont.innerHTML = '';
             for(let i=1; i<=3; i++) {
                 let fHour = (h + i) % 24;
-                let fIcons = (fHour > 6 && fHour < 19) ? wIconsDay : wIconsNight;
-                fCont.innerHTML += `<div style="text-align:center;"><div>${fHour}h</div><div style="font-size:18px">${fIcons[data.hourly.weather_code[h+i]]||"☀️"}</div><div>${Math.round(data.hourly.temperature_2m[h+i])}°</div></div>`;
+                let fNight = d.hourly.is_day[h+i] === 0; // Calcul exact pour chaque heure prévue
+                let wIcon = getWeatherIcon(d.hourly.weather_code[h+i], fNight);
+                fCont.innerHTML += `<div style="text-align:center;"><div>${fHour}h</div><div style="font-size:18px; margin:4px 0;">${wIcon}</div><div>${Math.round(d.hourly.temperature_2m[h+i])}°</div></div>`;
             }
 
             const wCont = document.getElementById('week-container'); wCont.innerHTML = '';
-            data.daily.time.forEach((t, i) => {
-                let d = new Date(t);
-                wCont.innerHTML += `<div class="week-row"><span>${d.getDate()}/${d.getMonth()+1}</span> <span>${wIconsDay[data.daily.weather_code[i]]||"☀️"}</span> <span style="color:var(--red)">${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
+            d.daily.time.forEach((t, i) => {
+                let day = new Date(t).toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric'});
+                
+                let idxMatin = i * 24 + 8;
+                let idxAprem = i * 24 + 14;
+                let idxNuit = i * 24 + 22;
+
+                if (idxNuit < d.hourly.temperature_2m.length) {
+                    let iconMat = getWeatherIcon(d.hourly.weather_code[idxMatin], d.hourly.is_day[idxMatin] === 0);
+                    let tempMat = Math.round(d.hourly.temperature_2m[idxMatin]);
+
+                    let iconApr = getWeatherIcon(d.hourly.weather_code[idxAprem], d.hourly.is_day[idxAprem] === 0);
+                    let tempApr = Math.round(d.hourly.temperature_2m[idxAprem]);
+
+                    let iconNui = getWeatherIcon(d.hourly.weather_code[idxNuit], d.hourly.is_day[idxNuit] === 0);
+                    let tempNui = Math.round(d.hourly.temperature_2m[idxNuit]);
+
+                    wCont.innerHTML += `
+                    <div class="week-row">
+                        <span>${day}</span>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <span style="font-size:0.65rem; color:var(--sub)">08:00</span>
+                            <span style="font-size:1.2rem;">${iconMat}</span>
+                            <span style="font-size:0.9rem;">${tempMat}°</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <span style="font-size:0.65rem; color:var(--sub)">14:00</span>
+                            <span style="font-size:1.2rem;">${iconApr}</span>
+                            <span style="font-size:0.9rem; color:var(--orange)">${tempApr}°</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <span style="font-size:0.65rem; color:var(--sub)">22:00</span>
+                            <span style="font-size:1.2rem;">${iconNui}</span>
+                            <span style="font-size:0.9rem; color:var(--accent)">${tempNui}°</span>
+                        </div>
+                    </div>`;
+                }
             });
-            
+
+            document.getElementById('wind-needle').style.transform = `rotate(${d.current.wind_direction_10m + 180}deg)`;
             runAnalysis();
-            document.getElementById('wind-needle').style.transform = `rotate(${currentData.windDir}deg)`;
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     }
 
     function runAnalysis() {
@@ -271,42 +441,172 @@
         document.getElementById('h-label').innerText = h;
         const factor = Math.pow((h + 10) / 10, 0.14);
         const vAlt = Math.round(currentData.vSol * factor);
-        const gAlt = Math.round(currentData.gSol * factor);
-        document.getElementById('v-alt-val').innerText = `${vAlt} km/h`;
-        document.getElementById('v-gust-val').innerText = `Rafales: ${gAlt} km/h`;
+        document.getElementById('v-alt-val').innerText = vAlt + " km/h";
+        document.getElementById('v-gust-val').innerText = "Rafales: " + Math.round(currentData.gSol * factor) + " km/h";
         let endurance = Math.max(0, Math.round(35 * (1 - (vAlt/120))));
         document.getElementById('flight-est-val').innerText = endurance + " min";
         const sTxt = document.getElementById('status-txt');
-        const sCard = document.getElementById('status-card');
-        if (vAlt >= 45 || gAlt >= 50) {
-            sTxt.innerText = "🚫 DANGER"; sTxt.style.color = "var(--red)"; sCard.style.borderLeftColor = "var(--red)";
-        } else if (vAlt >= 30 || gAlt >= 35) {
-            sTxt.innerText = "⚠️ ATTENTION"; sTxt.style.color = "var(--orange)"; sCard.style.borderLeftColor = "var(--orange)";
-        } else {
-            sTxt.innerText = "🛡️ OPÉRATIONNEL"; sTxt.style.color = "var(--green)"; sCard.style.borderLeftColor = "var(--green)";
+        if (vAlt >= 45) { sTxt.innerText = "🚫 DANGER"; sTxt.style.color = "var(--red)"; }
+        else if (vAlt >= 30) { sTxt.innerText = "⚠️ ATTENTION"; sTxt.style.color = "var(--orange)"; }
+        else { sTxt.innerText = "🛡️ OPÉRATIONNEL"; sTxt.style.color = "var(--green)"; }
+    }
+
+    async function runExpertScan() {
+        const report = document.getElementById('analysis-report');
+        const content = document.getElementById('report-content');
+        const pos = marker.getLatLng();
+        
+        report.style.display = 'block';
+        content.innerText = ">> DOUBLE ACQUISITION EN COURS...\n- ESPACES (RAYON 2 KM)\n- AÉROPORTS/HÉLISTATIONS (RAYON 10 KM)";
+
+        let zonesAero = "";
+        let infosAero = "";
+        
+        const bboxAirspaces = `${pos.lng - 0.02},${pos.lat - 0.02},${pos.lng + 0.02},${pos.lat + 0.02}`;
+        const bboxAirports = `${pos.lng - 0.09},${pos.lat - 0.09},${pos.lng + 0.09},${pos.lat + 0.09}`;
+
+        try {
+            const urlZones = `https://api.core.openaip.net/api/airspaces?bbox=${bboxAirspaces}&apiKey=${OPENAIP_KEY}`;
+            const resZones = await fetch(urlZones);
+            if (resZones.ok) {
+                const dataZones = await resZones.json();
+                if(dataZones.items && dataZones.items.length > 0) {
+                    let filteredItems = dataZones.items.filter(i => {
+                        let type = (i.type || i.icaoClass || "").toString().toUpperCase();
+                        let name = (i.name || "").toUpperCase();
+                        if(type.includes('FIR') || type.includes('UIR') || name.includes('SIV') || name.includes('FIR') || name.includes('INFO')) return false; 
+                        if (i.lowerLimit) {
+                            let altInMeters = 0;
+                            if (i.lowerLimit.unit === 0) altInMeters = i.lowerLimit.value;
+                            else if (i.lowerLimit.unit === 1) altInMeters = i.lowerLimit.value * 0.3048;
+                            else if (i.lowerLimit.unit === 6) altInMeters = i.lowerLimit.value * 30.48;
+                            if (altInMeters > 500) return false; 
+                        }
+                        return true;
+                    });
+                    if(filteredItems.length > 0) {
+                        zonesAero = filteredItems.map(i => {
+                            let floor = getDecodedAlt(i.lowerLimit);
+                            let ceil = getDecodedAlt(i.upperLimit);
+                            return `- ZONE: ${i.name} | TYPE: ${i.icaoClass} | PLANCHER: ${floor} | PLAFOND: ${ceil}`;
+                        }).join('\n');
+                    }
+                }
+            }
+        } catch(e) { console.error("Erreur espaces", e); }
+
+        try {
+            const urlAirports = `https://api.core.openaip.net/api/airports?bbox=${bboxAirports}&apiKey=${OPENAIP_KEY}`;
+            const resAirports = await fetch(urlAirports);
+            if (resAirports.ok) {
+                const dataAirports = await resAirports.json();
+                if(dataAirports.items && dataAirports.items.length > 0) {
+                    infosAero = dataAirports.items.map(i => {
+                        let n = (i.name || "").toUpperCase();
+                        let typeText = "Aérodrome (Activité Mixte Potentielle : Avion/ULM/Planeur)"; 
+                        if(i.type === 3 || n.includes('HOPITAL') || n.includes('HÔPITAL') || n.includes('CENTRE HOSPITALIER') || n.includes('CHU') || n.includes('CH ') || n.includes('SAMU') || n.includes('HELI')) {
+                            typeText = "Hélistation / SAMU / Hôpital (Trafic HÉLICOPTÈRE EXCLUSIF)";
+                        } else if(i.type === 4 || n.includes('ULM')) {
+                            typeText = "Base ULM (Trafic ULM/Léger)";
+                        }
+                        return `- INFRA: ${i.name} | TYPE: ${typeText} | OACI: ${i.icaoCode || "N/A"}`;
+                    }).join('\n');
+                }
+            }
+        } catch(e) { console.error("Erreur aéroports", e); }
+
+        try {
+            const overpassQuery = `[out:json];nwr["amenity"="hospital"](${pos.lat - 0.09},${pos.lng - 0.09},${pos.lat + 0.09},${pos.lng + 0.09});out center;`;
+            const urlOSM = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+            const resOSM = await fetch(urlOSM);
+            if (resOSM.ok) {
+                const dataOSM = await resOSM.json();
+                if(dataOSM.elements && dataOSM.elements.length > 0) {
+                    let osmInfos = dataOSM.elements.map(h => {
+                        let nomHosp = (h.tags && h.tags.name ? h.tags.name : "CENTRE HOSPITALIER NON NOMMÉ").toUpperCase();
+                        return `- INFRA: ${nomHosp} | TYPE: Hélistation / SAMU / Hôpital (Trafic HÉLICOPTÈRE EXCLUSIF) | OACI: NON-PUBLIÉ`;
+                    }).join('\n');
+                    if(infosAero !== "") infosAero += "\n";
+                    infosAero += osmInfos;
+                }
+            }
+        } catch(e) { console.error("Erreur OSM Hopitaux", e); }
+
+        let payloadData = `ESPACES AÉRIENS (< 2KM) :\n${zonesAero || "Aucun espace contrôlé direct."}\n\nINFRASTRUCTURES DE SURFACE (RAYON 10 KM) :\n${infosAero || "Aucune infrastructure à moins de 10 km."}`;
+
+        content.innerText = ">> ANALYSE TACTIQUE IA EN COURS...";
+
+        const systemMessage = `Tu es l'Officier de Renseignement Aérien du Tactical PC SKY ANALYZER. Ton expertise est la réglementation UAS/Aéronautique en France.
+
+        MISSION : Analyser la viabilité et les risques d'un vol de drone (max 500m). Tu reçois deux types de données : les espaces aériens dans un rayon de 2 km, et les aéroports/hélistations dans un rayon de 10 km.
+
+        RÈGLES D'INTERPRÉTATION FRANÇAISES STRICTES :
+        1. ESPACES : Note bien le PLAFOND fourni.
+        2. ZONE P (Interdite) = Statut ROUGE.
+        3. ZONE R (Réglementée) = Préciser s'il s'agit d'une zone locale ou RTBA. Statut ORANGE.
+        4. INFRASTRUCTURES DANS LES 10 KM : Utilise ces données pour alerter sur le **trafic probable**. Si c'est un aérodrome à activité mixte, rappelle le risque de croiser des avions, des ULM ou des planeurs en approche/départ. Si c'est une hélistation, insiste sur le SAMU/Sécurité Civile.
+        5. TÉLÉPHONES GESTIONNAIRES : Ne tente pas d'inventer des numéros de téléphone. Indique toujours de chercher le numéro officiel sur la CARTE VAC.
+        6. TON TACTIQUE : Concis et factuel.
+
+        FORMAT DE SORTIE OBLIGATOIRE :
+        [STATUT DU SECTEUR] : (VERT, ORANGE ou ROUGE)
+        [ZONES STRICTES < 2km] : (Espaces aériens limitrophes, avec Plancher/Plafond)
+        [MENACE TRAFIC < 10km] : (Aéroports, pistes et Hélistations environnants avec leurs activités potentielles)
+        [ANALYSE DE RISQUE TACTIQUE] : (Synthèse)
+        [ACTIONS MANUELLES REQUISES] : (Lister impérativement : 1. Rechercher le TÉLÉPHONE du gestionnaire sur la CARTE VAC pour l'aviser de l'opération. 2. Lecture NOTAM. 3. Vérification carte ZICAD. 4. Vérification AZBA uniquement si zone R suspecte. 5. Vigie trafic aérien visuelle et auditive).`;
+
+        const userMessage = `RAPPORT DE SITUATION :
+        - COORDONNÉES : Latitude ${pos.lat}, Longitude ${pos.lng}
+        - DONNÉES FILTRÉES : 
+        ${payloadData}
+
+        Génère l'analyse tactique.`;
+
+        try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        {role: "system", content: systemMessage},
+                        {role: "user", content: userMessage}
+                    ],
+                    temperature: 0.1
+                })
+            });
+            
+            const result = await response.json();
+            
+            if(result.error) {
+                content.innerText = ">> ERREUR API GROQ : " + result.error.message;
+            } else if(result.choices && result.choices.length > 0) {
+                content.innerText = ">> RAPPORT D'INTELLIGENCE TACTIQUE :\n\n" + result.choices[0].message.content;
+            } else {
+                content.innerText = ">> ERREUR INCONNUE : La réponse de l'IA est vide.";
+            }
+        } catch(e) {
+            content.innerText = ">> ERREUR : LIAISON TACTIQUE ROMPUE. Vérifiez votre connexion internet.";
         }
     }
 
-    async function toggleRadar() {
-        const btn = document.getElementById('radar-btn-ui');
-        if (radarLayer) { map.removeLayer(radarLayer); radarLayer = null; btn.innerText = "📡 Radar"; return; }
+    async function searchAddress() {
+        const q = document.getElementById('search-input').value;
+        if (!q) return;
         try {
-            const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-            const data = await resp.json();
-            const lastTime = data.radar.past[data.radar.past.length - 1].time;
-            radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${lastTime}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0.65, zIndex: 1000 }).addTo(map);
-            btn.innerText = "📡 Radar OFF";
-        } catch(e) { alert("Radar Indisponible"); }
-    }
-
-    function openADSB() {
-        const pos = marker.getLatLng();
-        window.open(`https://globe.adsbexchange.com/?lat=${pos.lat}&lon=${pos.lng}&zoom=11&filterAltMax=2000`, "_blank");
-    }
-
-    function toggleChecklist() {
-        const m = document.getElementById('checklist-modal');
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+            const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
+            const res = await resp.json();
+            if(res.length > 0) { 
+                const p = [parseFloat(res[0].lat), parseFloat(res[0].lon)]; 
+                marker.setLatLng(p); 
+                map.setView(p, 13); 
+                fetchWeatherData(); 
+            } else {
+                alert("Adresse introuvable. Essayez d'ajouter le code postal ou la région.");
+            }
+        } catch(e) {
+            console.error("Erreur de recherche", e);
+        }
     }
 
     function showPage(p) {
@@ -319,13 +619,86 @@
     }
 
     function initLocation() { navigator.geolocation.getCurrentPosition(pos => { const p = [pos.coords.latitude, pos.coords.longitude]; marker.setLatLng(p); map.setView(p, 13); fetchWeatherData(); }, () => fetchWeatherData()); }
-    function openExternalGouv() { window.open(`https://carte.gouv.fr/carte/acces-aux-donnees-de-la-geoplateforme?c=${marker.getLatLng().lng},${marker.getLatLng().lat}&z=12&l=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI(1)`, '_blank'); }
-    function openExternalVAC() { window.open(`https://www.sia.aviation-civile.gouv.fr/vaip`, '_blank'); }
-    function openExternalNOTAM() { window.open(`https://notaminfo.com/francemap?lat=${marker.getLatLng().lat}&lon=${marker.getLatLng().lng}&zoom=11`, '_blank'); }
-    function openExternalSUP() { window.open(`https://www.sia.aviation-civile.gouv.fr/documents/supaip/aip/id/80`, '_blank'); }
-    function openExternalAZBA() { window.open(`https://www.sia.aviation-civile.gouv.fr/schedules`, '_blank'); }
-    function openExternalCarto() { window.open(`https://www.cartoradio.fr/index.html#/carto/lonlat/${marker.getLatLng().lng}/${marker.getLatLng().lat}`, '_blank'); }
-    function openExternalOpenAIP() { window.open(`https://www.openaip.net/map?lat=${marker.getLatLng().lat}&lon=${marker.getLatLng().lng}&zoom=11`, '_blank'); }
+    
+    function manualRefresh() { 
+        const icon = document.getElementById('sync-icon');
+        icon.classList.add('refresh-spin');
+        initLocation(); 
+        setTimeout(() => icon.classList.remove('refresh-spin'), 1000);
+    }
+    
+    async function openADSB() {
+        const btn = document.getElementById('btn-adsb');
+        if (adsbActive) {
+            adsbActive = false;
+            clearInterval(adsbInterval);
+            if (map.hasLayer(adsbLayer)) map.removeLayer(adsbLayer);
+            adsbLayer.clearLayers();
+            btn.innerText = "⚡ AÉRIEN: OFF";
+            btn.classList.remove('bg-on');
+            btn.classList.add('bg-off');
+            return;
+        }
+        adsbActive = true;
+        adsbLayer.addTo(map);
+        btn.innerText = "⚡ AÉRIEN: ON";
+        btn.classList.remove('bg-off');
+        btn.classList.add('bg-on');
+        fetchADSB();
+        adsbInterval = setInterval(fetchADSB, 5000); 
+    }
+
+    async function fetchADSB() {
+        if (!adsbActive) return;
+        const p = marker.getLatLng();
+        try {
+            const res = await fetch(`https://api.airplanes.live/v2/point/${p.lat}/${p.lng}/50`);
+            if(!res.ok) return;
+            const data = await res.json();
+            adsbLayer.clearLayers();
+            
+            if (data.ac && data.ac.length > 0) {
+                data.ac.forEach(ac => {
+                    if (ac.lat && ac.lon) {
+                        let altM = ac.alt_baro === "ground" ? 0 : (ac.alt_baro || 0) * 0.3048;
+                        let color = altM < 600 ? "var(--red)" : (altM < 1500 ? "var(--orange)" : "var(--green)");
+                        let rot = ac.track || 0;
+                        let callsign = ac.flight ? ac.flight.trim() : (ac.r || 'INCONNU');
+                        let speed = Math.round((ac.gs || 0) * 1.852);
+                        
+                        let isHelo = (ac.desc === 'H' || ac.category === 'A7' || callsign.includes('SAMU') || callsign.includes('DRAG') || callsign.includes('HLI'));
+                        
+                        let pathPlane = "M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z";
+                        let pathHelo = "M10.5,2 L10.5,6.2 C7.9,6.7 6,9.1 6,12 C6,14.9 7.9,17.3 10.5,17.8 L10.5,20 L8,20 L8,22 L16,22 L16,20 L13.5,20 L13.5,17.8 C16.1,17.3 18,14.9 18,12 C18,9.1 16.1,6.7 13.5,6.2 L13.5,2 L10.5,2 Z M12,8 C14.2,8 16,9.8 16,12 C16,14.2 14.2,16 12,16 C9.8,16 8,14.2 8,12 C8,9.8 9.8,8 12,8 Z";
+                        
+                        let targetPath = isHelo ? pathHelo : pathPlane;
+
+                        let iconHtml = `<div style="width:24px; height:24px; display:flex; align-items:center; justify-content:center;">
+                            <svg viewBox="0 0 24 24" width="24" height="24" style="transform: rotate(${rot}deg); fill: ${color}; filter: drop-shadow(0px 0px 3px rgba(0,0,0,0.8));">
+                                <path d="${targetPath}"/>
+                            </svg>
+                        </div>`;
+                        let divIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+                        
+                        let m = L.marker([ac.lat, ac.lon], { icon: divIcon, zIndexOffset: 1000 });
+                        let typ = isHelo ? "🚁 HELICO" : "✈️ AVION";
+                        let descType = ac.t ? ` (${ac.t})` : "";
+                        m.bindPopup(`<div style="font-size:11px; font-family:monospace; color:black;"><b>${callsign}</b>${descType}<br>${typ}<br>Alt: ${Math.round(altM)} m<br>Vit: ${speed} km/h</div>`);
+                        adsbLayer.addLayer(m);
+                    }
+                });
+            }
+        } catch (e) { console.error("Erreur ADSB API", e); }
+    }
+
+    function openExternalGouv() { window.open("https://carte.gouv.fr/carte/acces-aux-donnees-de-la-geoplateforme", "_blank"); }
+    function openExternalVAC() { window.open("https://www.sia.aviation-civile.gouv.fr/vaip", "_blank"); }
+    function openSofiaNotam() { window.open("https://sofia-briefing.aviation-civile.gouv.fr/sofia/pages/prepavol.html", "_blank"); }
+    function openExternalSUP() { window.open("https://www.sia.aviation-civile.gouv.fr/schedules", "_blank"); }
+    function openExternalAZBA() { window.open("https://www.sia.aviation-civile.gouv.fr/schedules", "_blank"); }
+    function openExternalCarto() { window.open("https://www.cartoradio.fr/", "_blank"); }
+    function openExternalOpenAIP() { window.open("https://www.openaip.net/", "_blank"); }
+    function openVisualDrone() { window.open("https://www.visualdrone.dsae.defense.gouv.fr/", "_blank"); }
 </script>
 </body>
 </html>
