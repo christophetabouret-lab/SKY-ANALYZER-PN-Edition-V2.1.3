@@ -83,8 +83,8 @@
     </div>
 
     <div id="page-now">
-        <div id="status-card" class="card" style="border-left: 10px solid var(--green); display: flex; align-items: center; justify-content: center; min-height: 80px;">
-            <div id="status-txt" style="font-weight: 900; font-size: 28px; color: var(--green); text-align: center;">🛡️ OPÉRATIONNEL</div>
+        <div id="status-card" class="card" style="border-left: 8px solid var(--green); display: flex; align-items: center; justify-content: center; padding: 12px; max-width: 85%; margin: 0 auto 15px auto;">
+            <div id="status-txt" style="font-weight: 900; font-size: 22px; color: var(--green); text-align: center;">🛡️ BON POUR VOLER</div>
         </div>
 
         <div class="stats-grid">
@@ -153,7 +153,10 @@
             <h2 style="font-size: 14px; color: var(--accent); margin-bottom: 15px; text-transform: uppercase;">TERMINAL DE MISSION</h2>
             
             <button class="btn-launch" style="background: var(--accent); color: white;" onclick="runExpertScan()">🧠 ANALYSE TACTIQUE IA</button>
-            <div id="analysis-report" style="display:none; text-align: left; background: #000; color: #34c759; padding: 15px; border-radius: 12px; font-family: monospace; font-size: 11px; border-left: 4px solid var(--accent); line-height: 1.4; white-space: pre-wrap; overflow-y: auto; max-height: 400px; margin-bottom: 15px;"><div id="report-content">Prêt pour acquisition...</div></div>
+            
+            <div id="analysis-report" style="display:none; text-align: left; background: #1c1c1e; color: #d1d1d6; padding: 20px; border-radius: 12px; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; border-left: 4px solid var(--accent); line-height: 1.6; white-space: pre-wrap; overflow-y: auto; max-height: 450px; margin-bottom: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                <div id="report-content">Prêt pour acquisition...</div>
+            </div>
             
             <div class="btn-launch-grid">
                 <button class="btn-launch" onclick="openExternalGouv()">🗺️ VISUALISEUR OACI (ZICAD)</button>
@@ -177,12 +180,10 @@
     let map, marker, openAipLayer = null;
     let currentData = { vSol:0, gSol:0, tSol:0, humSol:0, dp:0, kp:1.2 };
     
-    // Variables globales Radar Nuages/Pluie
     let radarLayer = null;
     let radarInterval = null;
     let radarActive = false;
 
-    // Variables globales Radar Aérien
     let adsbLayer = L.layerGroup();
     let adsbInterval = null;
     let adsbActive = false;
@@ -227,7 +228,6 @@
         });
     }
 
-    // FONCTION ACTIVATION GYROSCOPE
     function initCompass() {
         const box = document.getElementById('compass-box');
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -358,12 +358,10 @@
         try {
             fetchRealKP();
 
-            // AJOUT DU PARAMÈTRE is_day pour le calcul astronomique exact
-            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
             const d = await r.json();
             const h = new Date().getHours();
             
-            // LA NUIT EST MAINTENANT DICTÉE PAR L'ASTRONOMIE ET NON PLUS UNE HEURE FIXE
             let isNowNight = d.current.is_day === 0;
             
             currentData.vSol = d.current.wind_speed_10m;
@@ -379,14 +377,37 @@
             document.getElementById('rain-prob').innerText = (d.hourly.precipitation_probability[h] || 0) + "%";
             document.getElementById('pressure-val').innerText = Math.round(d.current.surface_pressure);
             document.getElementById('visibility-val').innerText = (d.current.visibility/1000).toFixed(1) + "km";
-            document.getElementById('cloud-base').innerText = (d.current.cloud_cover < 15) ? "NSC" : Math.round((currentData.tSol - currentData.dp) * 122) + "m";
+            
+            let cc = d.current.cloud_cover || 0;
+            let ccLow = d.current.cloud_cover_low || 0;
+            let ccMid = d.current.cloud_cover_mid || 0;
+            let ccHigh = d.current.cloud_cover_high || 0;
+            
+            let baseText = "NSC"; 
+            
+            if (cc < 15) {
+                baseText = "NSC"; 
+            } else if (ccLow > 15) {
+                let spread = currentData.tSol - d.current.dew_point_2m;
+                let baseMeters = Math.max(0, Math.round(spread * 122));
+                baseText = baseMeters + "m";
+            } else if (ccMid > 15) {
+                baseText = "> 2000m"; 
+            } else if (ccHigh > 15) {
+                baseText = "> 6000m"; 
+            } else {
+                let spread = currentData.tSol - d.current.dew_point_2m;
+                baseText = Math.max(0, Math.round(spread * 122)) + "m";
+            }
+            document.getElementById('cloud-base').innerText = baseText;
+
             document.getElementById('sunrise-val').innerText = d.daily.sunrise[0].split('T')[1];
             document.getElementById('sunset-val').innerText = d.daily.sunset[0].split('T')[1];
             
             const fCont = document.getElementById('forecast-3h'); fCont.innerHTML = '';
             for(let i=1; i<=3; i++) {
                 let fHour = (h + i) % 24;
-                let fNight = d.hourly.is_day[h+i] === 0; // Calcul exact pour chaque heure prévue
+                let fNight = d.hourly.is_day[h+i] === 0;
                 let wIcon = getWeatherIcon(d.hourly.weather_code[h+i], fNight);
                 fCont.innerHTML += `<div style="text-align:center;"><div>${fHour}h</div><div style="font-size:18px; margin:4px 0;">${wIcon}</div><div>${Math.round(d.hourly.temperature_2m[h+i])}°</div></div>`;
             }
@@ -445,10 +466,23 @@
         document.getElementById('v-gust-val').innerText = "Rafales: " + Math.round(currentData.gSol * factor) + " km/h";
         let endurance = Math.max(0, Math.round(35 * (1 - (vAlt/120))));
         document.getElementById('flight-est-val').innerText = endurance + " min";
+        
         const sTxt = document.getElementById('status-txt');
-        if (vAlt >= 45) { sTxt.innerText = "🚫 DANGER"; sTxt.style.color = "var(--red)"; }
-        else if (vAlt >= 30) { sTxt.innerText = "⚠️ ATTENTION"; sTxt.style.color = "var(--orange)"; }
-        else { sTxt.innerText = "🛡️ OPÉRATIONNEL"; sTxt.style.color = "var(--green)"; }
+        const sCard = document.getElementById('status-card');
+
+        if (vAlt >= 45) {
+            sTxt.innerText = "🚫 DANGER";
+            sTxt.style.color = "var(--red)";
+            sCard.style.borderLeftColor = "var(--red)";
+        } else if (vAlt >= 30) {
+            sTxt.innerText = "⚠️ ATTENTION";
+            sTxt.style.color = "var(--orange)";
+            sCard.style.borderLeftColor = "var(--orange)";
+        } else {
+            sTxt.innerText = "🛡️ BON POUR VOLER";
+            sTxt.style.color = "var(--green)";
+            sCard.style.borderLeftColor = "var(--green)";
+        }
     }
 
     async function runExpertScan() {
@@ -457,7 +491,7 @@
         const pos = marker.getLatLng();
         
         report.style.display = 'block';
-        content.innerText = ">> DOUBLE ACQUISITION EN COURS...\n- ESPACES (RAYON 2 KM)\n- AÉROPORTS/HÉLISTATIONS (RAYON 10 KM)";
+        content.innerHTML = "<span style='color:var(--accent); font-weight:bold;'>>> DOUBLE ACQUISITION EN COURS...</span>\n- ESPACES (RAYON 2 KM)\n- AÉROPORTS/HÉLISTATIONS (RAYON 10 KM)";
 
         let zonesAero = "";
         let infosAero = "";
@@ -534,7 +568,7 @@
 
         let payloadData = `ESPACES AÉRIENS (< 2KM) :\n${zonesAero || "Aucun espace contrôlé direct."}\n\nINFRASTRUCTURES DE SURFACE (RAYON 10 KM) :\n${infosAero || "Aucune infrastructure à moins de 10 km."}`;
 
-        content.innerText = ">> ANALYSE TACTIQUE IA EN COURS...";
+        content.innerHTML = "<span style='color:var(--accent); font-weight:bold;'>>> ANALYSE TACTIQUE IA EN COURS...</span>";
 
         const systemMessage = `Tu es l'Officier de Renseignement Aérien du Tactical PC SKY ANALYZER. Ton expertise est la réglementation UAS/Aéronautique en France.
 
@@ -553,7 +587,8 @@
         [ZONES STRICTES < 2km] : (Espaces aériens limitrophes, avec Plancher/Plafond)
         [MENACE TRAFIC < 10km] : (Aéroports, pistes et Hélistations environnants avec leurs activités potentielles)
         [ANALYSE DE RISQUE TACTIQUE] : (Synthèse)
-        [ACTIONS MANUELLES REQUISES] : (Lister impérativement : 1. Rechercher le TÉLÉPHONE du gestionnaire sur la CARTE VAC pour l'aviser de l'opération. 2. Lecture NOTAM. 3. Vérification carte ZICAD. 4. Vérification AZBA uniquement si zone R suspecte. 5. Vigie trafic aérien visuelle et auditive).`;
+        [ACTIONS MANUELLES REQUISES] : (Lister impérativement : 1. Rechercher le TÉLÉPHONE du gestionnaire sur la CARTE VAC pour l'aviser de l'opération. 2. Lecture NOTAM. 3. Vérification carte ZICAD. 4. Vérification AZBA uniquement si zone R suspecte. 5. Vigie trafic aérien visuelle et auditive)
+        [AVERTISSEMENT] : (Rappeler impérativement que cette synthèse est générée par une IA, qu'elle peut contenir des erreurs, et que le télépilote doit systématiquement vérifier les sources officielles.)`;
 
         const userMessage = `RAPPORT DE SITUATION :
         - COORDONNÉES : Latitude ${pos.lat}, Longitude ${pos.lng}
@@ -579,14 +614,25 @@
             const result = await response.json();
             
             if(result.error) {
-                content.innerText = ">> ERREUR API GROQ : " + result.error.message;
+                content.innerHTML = "<span style='color:var(--red);'>>> ERREUR API GROQ : " + result.error.message + "</span>";
             } else if(result.choices && result.choices.length > 0) {
-                content.innerText = ">> RAPPORT D'INTELLIGENCE TACTIQUE :\n\n" + result.choices[0].message.content;
+                
+                // FORMATAGE DE L'AFFICHAGE POUR UNE LISIBILITE TACTIQUE MAXIMALE
+                let rawText = result.choices[0].message.content;
+                let formattedText = rawText
+                    .replace(/\[(.*?)\]/g, '<span style="color: var(--accent); font-weight: 900; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;">[$1]</span>')
+                    .replace(/\*\*(.*?)\*\*/g, '<b style="color: #ffffff;">$1</b>')
+                    .replace(/\bVERT\b/g, '<span style="color: var(--green); font-weight: 900;">VERT</span>')
+                    .replace(/\bORANGE\b/g, '<span style="color: var(--orange); font-weight: 900;">ORANGE</span>')
+                    .replace(/\bROUGE\b/g, '<span style="color: var(--red); font-weight: 900;">ROUGE</span>');
+
+                content.innerHTML = formattedText;
+                
             } else {
-                content.innerText = ">> ERREUR INCONNUE : La réponse de l'IA est vide.";
+                content.innerHTML = "<span style='color:var(--orange);'>>> ERREUR INCONNUE : La réponse de l'IA est vide.</span>";
             }
         } catch(e) {
-            content.innerText = ">> ERREUR : LIAISON TACTIQUE ROMPUE. Vérifiez votre connexion internet.";
+            content.innerHTML = "<span style='color:var(--red); font-weight:bold;'>>> ERREUR : LIAISON TACTIQUE ROMPUE. Vérifiez votre connexion internet.</span>";
         }
     }
 
