@@ -29,6 +29,10 @@
         .tab-btn { background: none; border: none; color: var(--sub); font-weight: bold; cursor: pointer; padding: 8px 12px; font-size: 0.75rem; border-radius: 20px; white-space: nowrap; }
         .tab-btn.active { background: var(--accent); color: white; }
 
+        /* ALERTE TRAFIC (HORS CARTE) */
+        .traffic-alert { background: var(--red); color: white; font-weight: 900; font-size: 14px; text-align: center; padding: 14px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(255,0,0,0.4); animation: flashAlert 1s infinite; display: none; border: 2px solid #fff; letter-spacing: 1px; }
+        @keyframes flashAlert { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; text-align: center; color: var(--text); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
         .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
@@ -51,8 +55,8 @@
         .wind-needle { position: absolute; width: 10px; height: 34px; top: 50%; left: 50%; margin-top: -17px; margin-left: -5px; transition: transform 0.5s ease; display: flex; flex-direction: column; align-items: center; z-index: 10; }
 
         /* BARRE DE COUCHES SOUS LA CARTE */
-        .layer-bar { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; }
-        .layer-btn { flex: 1; padding: 14px 0; border-radius: 12px; font-size: 11px; font-weight: 900; cursor: pointer; text-transform: uppercase; border: none; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        .layer-bar { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
+        .layer-btn { flex: 1; padding: 14px 0; border-radius: 12px; font-size: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; border: none; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
         .bg-off { background: #2c3e50; }
         .bg-on { background: var(--green); }
 
@@ -83,6 +87,8 @@
     </div>
 
     <div id="page-now">
+        <div id="traffic-alert" class="traffic-alert">⚠️ AÉRONEF À PROXIMITÉ (< 2KM) ⚠️</div>
+
         <div id="status-card" class="card" style="border-left: 8px solid var(--green); display: flex; align-items: center; justify-content: center; padding: 12px; max-width: 85%; margin: 0 auto 15px auto;">
             <div id="status-txt" style="font-weight: 900; font-size: 22px; color: var(--green); text-align: center;">🛡️ BON POUR VOLER</div>
         </div>
@@ -98,7 +104,9 @@
                 <input type="text" id="search-input" class="search-input" placeholder="Ville, adresse...">
                 <button class="search-btn" onclick="searchAddress()">🔍</button>
             </div>
+            
             <div id="map"></div>
+            
             <div class="compass-box" id="compass-box" onclick="initCompass()" title="Cliquer pour activer le gyro">
                 <div class="compass-n">N</div>
                 <div class="compass-e">E</div>
@@ -112,9 +120,10 @@
         </div>
 
         <div class="layer-bar">
-            <button id="openaip-btn-ui" class="layer-btn bg-on" onclick="toggleOpenAIP()">✈️ ZONES: ON</button>
-            <button id="radar-btn-ui" class="layer-btn bg-off" onclick="toggleRadar()">🌧️ PLUIE: OFF</button>
-            <button id="btn-adsb" class="layer-btn bg-off" onclick="openADSB()">⚡ AÉRIEN: OFF</button>
+            <button id="openaip-btn-ui" class="layer-btn bg-on" onclick="toggleOpenAIP()">✈️ ZONES</button>
+            <button id="radar-btn-ui" class="layer-btn bg-off" onclick="toggleRadar()">🌧️ PLUIE</button>
+            <button id="btn-adsb" class="layer-btn bg-off" onclick="openADSB()">⚡ AÉRIEN</button>
+            <button id="btn-sound" class="layer-btn bg-off" onclick="toggleSound()">🔕 SON: OFF</button>
         </div>
 
         <div class="card">
@@ -170,15 +179,22 @@
             </div>
         </div>
     </div>
+    
+    <div style="text-align: center; margin-top: 10px; padding-bottom: 20px; font-size: 10px; color: var(--sub); letter-spacing: 1px;">
+        © 2026 SKY ANALYZER - Pn Edition Tactical<br>
+        Tous droits réservés Christophe Tabouret.<br>
+        Données à usage consultatif. Vérifiez les sources officielles.
+    </div>
+
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const GROQ_KEY = "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";
+    const GROQ_KEY = atob("Z3NrX0NUTnpsU1oxRXNPdFdhazluWmdBV0dkeWIzRlkxWGlPek5JRjM2VnJNY2F1RlgweUZvMVQ=");
     const OPENAIP_KEY = "c48668cbe2f43b3c0fcd2183bab71089";
 
     let map, marker, openAipLayer = null;
-    let currentData = { vSol:0, gSol:0, tSol:0, humSol:0, dp:0, kp:1.2 };
+    let currentData = { vSol:0, gSol:0, tSol:0, humSol:0, dp:0, kp:1.2, rainProb:0 };
     
     let radarLayer = null;
     let radarInterval = null;
@@ -187,6 +203,37 @@
     let adsbLayer = L.layerGroup();
     let adsbInterval = null;
     let adsbActive = false;
+
+    // GESTION AUDIO VOCALE
+    let soundEnabled = false;
+    let lastVoiceAlertTime = 0; 
+
+    function toggleSound() {
+        const btn = document.getElementById('btn-sound');
+        soundEnabled = !soundEnabled;
+        if(soundEnabled) {
+            btn.innerText = "🔊 SON: ON";
+            btn.classList.remove('bg-off');
+            btn.classList.add('bg-on');
+        } else {
+            btn.innerText = "🔕 SON: OFF";
+            btn.classList.remove('bg-on');
+            btn.classList.add('bg-off');
+            window.speechSynthesis.cancel(); 
+        }
+    }
+
+    function playVoiceAlert() {
+        if (!soundEnabled) return;
+        const now = Date.now();
+        if (now - lastVoiceAlertTime > 15000) {
+            const utterance = new SpeechSynthesisUtterance("Attention, aéronef à proximité");
+            utterance.lang = "fr-FR";
+            utterance.rate = 1.1; 
+            window.speechSynthesis.speak(utterance);
+            lastVoiceAlertTime = now;
+        }
+    }
 
     function getDecodedAlt(limit) {
         if (!limit || (limit.value === 0 && limit.referenceDatum === 0)) return "SFC";
@@ -225,6 +272,13 @@
 
         document.getElementById('search-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') searchAddress();
+        });
+
+        // ÉCOUTEUR DE CLIC SUR LA CARTE
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            map.setView(e.latlng);
+            fetchWeatherData();
         });
     }
 
@@ -336,17 +390,19 @@
             const data = await resp.json();
             const lastEntry = data[data.length - 1];
             const kpValue = parseFloat(lastEntry[1]);
+            currentData.kp = kpValue;
             
             const kpEl = document.getElementById('kp-val');
             kpEl.innerText = kpValue.toFixed(1);
             
-            if (kpValue >= 5) {
+            if (kpValue >= 6) {
                 kpEl.style.color = "var(--red)";
             } else if (kpValue >= 4) {
                 kpEl.style.color = "var(--orange)";
             } else {
                 kpEl.style.color = "inherit"; 
             }
+            runAnalysis();
         } catch(e) {
             console.error("Erreur de récupération du KP", e);
             document.getElementById('kp-val').innerText = "N/A";
@@ -357,6 +413,25 @@
         const p = marker.getLatLng();
         try {
             fetchRealKP();
+
+            let kpForecast = {};
+            try {
+                const resp27 = await fetch('https://services.swpc.noaa.gov/text/27-day-outlook.txt');
+                if(resp27.ok) {
+                    const text27 = await resp27.text();
+                    const monthMap = { 'Jan':'01', 'Feb':'02', 'Mar':'03', 'Apr':'04', 'May':'05', 'Jun':'06', 'Jul':'07', 'Aug':'08', 'Sep':'09', 'Oct':'10', 'Nov':'11', 'Dec':'12' };
+                    text27.split('\n').forEach(line => {
+                        let l = line.trim();
+                        if(l.match(/^20\d\d\s+[A-Z][a-z]{2}\s+\d{1,2}/)) {
+                            let pts = l.split(/\s+/);
+                            let y = pts[0];
+                            let m = monthMap[pts[1]];
+                            let d = pts[2].padStart(2, '0');
+                            kpForecast[`${y}-${m}-${d}`] = parseInt(pts[5]); 
+                        }
+                    });
+                }
+            } catch(e) { console.error("Erreur forecast KP NOAA", e); }
 
             const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
             const d = await r.json();
@@ -369,12 +444,13 @@
             currentData.tSol = d.current.temperature_2m;
             currentData.humSol = d.current.relative_humidity_2m;
             currentData.dp = Math.round(d.current.dew_point_2m);
+            currentData.rainProb = d.hourly.precipitation_probability[h] || 0;
             
             document.getElementById('main-weather-icon').innerText = getWeatherIcon(d.current.weather_code, isNowNight);
             document.getElementById('main-temp-val').innerText = Math.round(currentData.tSol);
             document.getElementById('dp-val').innerText = currentData.dp + "°";
             document.getElementById('hum-val').innerText = currentData.humSol + "%";
-            document.getElementById('rain-prob').innerText = (d.hourly.precipitation_probability[h] || 0) + "%";
+            document.getElementById('rain-prob').innerText = currentData.rainProb + "%";
             document.getElementById('pressure-val').innerText = Math.round(d.current.surface_pressure);
             document.getElementById('visibility-val').innerText = (d.current.visibility/1000).toFixed(1) + "km";
             
@@ -430,20 +506,32 @@
                     let iconNui = getWeatherIcon(d.hourly.weather_code[idxNuit], d.hourly.is_day[idxNuit] === 0);
                     let tempNui = Math.round(d.hourly.temperature_2m[idxNuit]);
 
+                    let kpMax = kpForecast[t];
+                    let kpStr = kpMax !== undefined ? kpMax : "--";
+                    let kpCol = "var(--sub)";
+                    if(kpMax !== undefined) {
+                        if(kpMax >= 6) kpCol = "var(--red)";
+                        else if(kpMax >= 4) kpCol = "var(--orange)";
+                        else kpCol = "var(--green)";
+                    }
+
                     wCont.innerHTML += `
                     <div class="week-row">
-                        <span>${day}</span>
-                        <div style="display:flex; flex-direction:column; gap:2px;">
+                        <div style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center;">
+                            <span style="text-align:left; text-transform:capitalize; font-size:1.05rem;">${day}</span>
+                            <span style="font-size:0.75rem; color:${kpCol}; font-weight:900; margin-top:2px;">KP: ${kpStr}</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
                             <span style="font-size:0.65rem; color:var(--sub)">08:00</span>
                             <span style="font-size:1.2rem;">${iconMat}</span>
                             <span style="font-size:0.9rem;">${tempMat}°</span>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:2px;">
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
                             <span style="font-size:0.65rem; color:var(--sub)">14:00</span>
                             <span style="font-size:1.2rem;">${iconApr}</span>
                             <span style="font-size:0.9rem; color:var(--orange)">${tempApr}°</span>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:2px;">
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
                             <span style="font-size:0.65rem; color:var(--sub)">22:00</span>
                             <span style="font-size:1.2rem;">${iconNui}</span>
                             <span style="font-size:0.9rem; color:var(--accent)">${tempNui}°</span>
@@ -470,11 +558,11 @@
         const sTxt = document.getElementById('status-txt');
         const sCard = document.getElementById('status-card');
 
-        if (vAlt >= 45) {
+        if (vAlt >= 45 || currentData.rainProb >= 60 || currentData.kp >= 6) {
             sTxt.innerText = "🚫 DANGER";
             sTxt.style.color = "var(--red)";
             sCard.style.borderLeftColor = "var(--red)";
-        } else if (vAlt >= 30) {
+        } else if (vAlt >= 30 || currentData.rainProb >= 30 || currentData.kp >= 4) {
             sTxt.innerText = "⚠️ ATTENTION";
             sTxt.style.color = "var(--orange)";
             sCard.style.borderLeftColor = "var(--orange)";
@@ -683,6 +771,7 @@
             btn.innerText = "⚡ AÉRIEN: OFF";
             btn.classList.remove('bg-on');
             btn.classList.add('bg-off');
+            document.getElementById('traffic-alert').style.display = 'none';
             return;
         }
         adsbActive = true;
@@ -695,7 +784,10 @@
     }
 
     async function fetchADSB() {
-        if (!adsbActive) return;
+        if (!adsbActive) {
+            document.getElementById('traffic-alert').style.display = 'none';
+            return;
+        }
         const p = marker.getLatLng();
         try {
             const res = await fetch(`https://api.airplanes.live/v2/point/${p.lat}/${p.lng}/50`);
@@ -703,6 +795,8 @@
             const data = await res.json();
             adsbLayer.clearLayers();
             
+            let criticalTraffic = false;
+
             if (data.ac && data.ac.length > 0) {
                 data.ac.forEach(ac => {
                     if (ac.lat && ac.lon) {
@@ -731,9 +825,23 @@
                         let descType = ac.t ? ` (${ac.t})` : "";
                         m.bindPopup(`<div style="font-size:11px; font-family:monospace; color:black;"><b>${callsign}</b>${descType}<br>${typ}<br>Alt: ${Math.round(altM)} m<br>Vit: ${speed} km/h</div>`);
                         adsbLayer.addLayer(m);
+
+                        let dist = p.distanceTo(L.latLng(ac.lat, ac.lon));
+                        if (altM < 600 && dist <= 2000) {
+                            criticalTraffic = true;
+                        }
                     }
                 });
             }
+
+            const alertBanner = document.getElementById('traffic-alert');
+            if (criticalTraffic) {
+                alertBanner.style.display = 'block';
+                playVoiceAlert();
+            } else {
+                alertBanner.style.display = 'none';
+            }
+
         } catch (e) { console.error("Erreur ADSB API", e); }
     }
 
