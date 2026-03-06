@@ -17,37 +17,46 @@
             --accent: #0a84ff; --green: #34c759; --orange: #ff9f0a; --red: #ff3b30; --overlay: rgba(255,255,255,0.95);
         }
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
+        /* THEME NUIT (DARK MODE) */
+        [data-theme="dark"] {
+            --bg: #000000; --card: #1c1c1e; --text: #ffffff; --border: #38383a; --sub: #ebebf599;
+            --overlay: rgba(28,28,30,0.95);
+        }
+        
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
         .app-container { display: flex; flex-direction: column; padding: 15px; max-width: 600px; margin: 0 auto; min-height: 100vh; box-sizing: border-box; }
         
         /* HEADER 80% - STRICT */
-        .app-header-container { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 20px auto; width: 80%; }
+        .app-header-container { position: relative; text-align: center; padding: 10px 0; border-bottom: 2px solid var(--accent); margin: 0 auto 20px auto; width: 80%; }
         .app-title { letter-spacing: 2px; font-size: 22px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 0; }
         .pn-edition-sub { font-size: 10px; color: var(--sub); letter-spacing: 3px; text-transform: uppercase; font-weight: bold; margin-top: 2px; display: block; }
         
         .tabs { display: flex; justify-content: center; gap: 8px; margin-top: 10px; align-items: center; }
-        .tab-btn { background: none; border: none; color: var(--sub); font-weight: bold; cursor: pointer; padding: 8px 12px; font-size: 0.75rem; border-radius: 20px; white-space: nowrap; }
+        .tab-btn { background: none; border: none; color: var(--sub); font-weight: bold; cursor: pointer; padding: 8px 12px; font-size: 0.75rem; border-radius: 20px; white-space: nowrap; transition: color 0.3s; }
         .tab-btn.active { background: var(--accent); color: white; }
+        
+        /* BOUTON THEME */
+        .theme-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--text); transition: color 0.3s; }
 
         /* ALERTE TRAFIC (HORS CARTE) */
         .traffic-alert { background: var(--red); color: white; font-weight: 900; font-size: 14px; text-align: center; padding: 14px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(255,0,0,0.4); animation: flashAlert 1s infinite; display: none; border: 2px solid #fff; letter-spacing: 1px; }
         @keyframes flashAlert { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; text-align: center; color: var(--text); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; text-align: center; color: var(--text); margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
+        .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; transition: background-color 0.3s, border-color 0.3s; }
         .stat-label { font-size: 10px; color: var(--accent); font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .stat-val { font-size: 14px; font-weight: 900; }
 
-        #map-container { height: 300px; position: relative; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 15px; }
+        #map-container { height: 300px; position: relative; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 15px; transition: border-color 0.3s; }
         #map { width: 100%; height: 100%; background: #ddd; z-index: 1; }
         
         .search-overlay { position: absolute; top: 10px; left: 10px; z-index: 1001; display: flex; width: calc(100% - 80px); gap: 5px; }
-        .search-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; font-weight: bold; background: white; }
+        .search-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 12px; font-weight: bold; background: var(--card); color: var(--text); transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         .search-btn { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
 
         /* BOUSSOLE AMÉLIORÉE AVEC TRANSITION */
-        .compass-box { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 60px; height: 60px; background: var(--overlay); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-family: sans-serif; font-size: 10px; font-weight: 900; color: var(--sub); box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s ease-out, border-color 0.3s; }
+        .compass-box { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 60px; height: 60px; background: var(--overlay); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-family: sans-serif; font-size: 10px; font-weight: 900; color: var(--sub); box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s ease-out, border-color 0.3s, background-color 0.3s, color 0.3s; }
         .compass-n { position: absolute; top: 2px; color: var(--red); }
         .compass-e { position: absolute; right: 4px; }
         .compass-s { position: absolute; bottom: 2px; }
@@ -60,10 +69,10 @@
         .bg-off { background: #2c3e50; }
         .bg-on { background: var(--green); }
 
-        .btn-launch { width: 100%; padding: 18px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: white; color: black; transition: 0.2s; margin-bottom: 15px; box-sizing: border-box; }
+        .btn-launch { width: 100%; padding: 18px; border-radius: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; border: 2px solid var(--accent); background: var(--card); color: var(--text); transition: 0.2s; margin-bottom: 15px; box-sizing: border-box; }
         .btn-launch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; text-align: center; }
+        .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; text-align: center; transition: border-color 0.3s; }
         .week-row span:first-child { text-align: left; text-transform: capitalize; font-size: 1.05rem; }
         
         input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0; }
@@ -83,6 +92,7 @@
             <button id="btn-week" class="tab-btn" onclick="showPage('week')">7 JOURS</button>
             <button id="btn-aero" class="tab-btn" onclick="showPage('aero')">MISSION</button>
             <button id="sync-icon" onclick="manualRefresh()" style="background:none; border:none; cursor:pointer; font-size: 1.2rem;">🔄</button>
+            <button id="theme-icon" class="theme-btn" onclick="toggleTheme()">🌓</button>
         </div>
     </div>
 
@@ -90,7 +100,7 @@
         <div id="traffic-alert" class="traffic-alert">⚠️ AÉRONEF À PROXIMITÉ (< 2KM) ⚠️</div>
 
         <div id="status-card" class="card" style="border-left: 8px solid var(--green); display: flex; align-items: center; justify-content: center; padding: 12px; max-width: 85%; margin: 0 auto 15px auto;">
-            <div id="status-txt" style="font-weight: 900; font-size: 22px; color: var(--green); text-align: center;">🛡️ BON POUR VOLER</div>
+            <div id="status-txt" style="font-weight: 900; font-size: 22px; color: var(--green); text-align: center; line-height: 1.2;">🛡️ BON POUR VOLER</div>
         </div>
 
         <div class="stats-grid">
@@ -128,7 +138,7 @@
 
         <div class="card">
             <span class="stat-label">Altitude d'analyse : <b id="h-label">0</b>m</span>
-            <input type="range" id="h-slider" min="0" max="250" value="0" step="5" oninput="runAnalysis()">
+            <input type="range" id="h-slider" min="0" max="300" value="0" step="5" oninput="runAnalysis()">
             <div id="v-alt-val" style="font-size: 32px; font-weight: 900;">-- km/h</div>
             <div id="v-gust-val" style="font-size: 16px; font-weight: 800; color: var(--sub);">Rafales: -- km/h</div>
         </div>
@@ -151,7 +161,7 @@
                 <div style="width: 1px; height: 30px; background: var(--border);"></div>
                 <div><span id="pressure-val" style="font-size: 22px; font-weight: 900;">--</span><span class="stat-label">hPa (QFE)</span></div>
             </div>
-            <div id="forecast-3h" style="display:flex; justify-content:space-around; margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
+            <div id="forecast-3h" style="display:flex; justify-content:space-around; margin-top:10px; border-top:1px solid #eee; padding-top:10px; transition: border-color 0.3s;"></div>
         </div>
     </div>
 
@@ -161,7 +171,7 @@
         <div class="card">
             <h2 style="font-size: 14px; color: var(--accent); margin-bottom: 15px; text-transform: uppercase;">TERMINAL DE MISSION</h2>
             
-            <button class="btn-launch" style="background: var(--accent); color: white;" onclick="runExpertScan()">🧠 ANALYSE TACTIQUE IA</button>
+            <button class="btn-launch" style="background: var(--accent); color: white; border-color: var(--accent);" onclick="runExpertScan()">🧠 ANALYSE TACTIQUE IA</button>
             
             <div id="analysis-report" style="display:none; text-align: left; background: #1c1c1e; color: #d1d1d6; padding: 20px; border-radius: 12px; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; border-left: 4px solid var(--accent); line-height: 1.6; white-space: pre-wrap; overflow-y: auto; max-height: 450px; margin-bottom: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
                 <div id="report-content">Prêt pour acquisition...</div>
@@ -208,6 +218,18 @@
     let soundEnabled = false;
     let lastVoiceAlertTime = 0; 
 
+    // GESTION THEME
+    let currentTheme = 'light';
+    function toggleTheme() {
+        if(currentTheme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            currentTheme = 'dark';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            currentTheme = 'light';
+        }
+    }
+
     function toggleSound() {
         const btn = document.getElementById('btn-sound');
         soundEnabled = !soundEnabled;
@@ -253,6 +275,13 @@
         if(code >= 80 && code <= 82) return '🌧️';
         if(code >= 95) return '⛈️';
         return '☁️';
+    }
+
+    // FONCTION DE CONVERSION DEGRES -> POINTS CARDINAUX
+    function getWindDirectionStr(degrees) {
+        const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+        const index = Math.round(degrees / 45) % 8;
+        return dirs[index];
     }
 
     function initApp() {
@@ -433,7 +462,8 @@
                 }
             } catch(e) { console.error("Erreur forecast KP NOAA", e); }
 
-            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
+            // AJOUT DU VENT DANS LA REQUETE OPEN-METEO
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
             const d = await r.json();
             const h = new Date().getHours();
             
@@ -499,12 +529,18 @@
                 if (idxNuit < d.hourly.temperature_2m.length) {
                     let iconMat = getWeatherIcon(d.hourly.weather_code[idxMatin], d.hourly.is_day[idxMatin] === 0);
                     let tempMat = Math.round(d.hourly.temperature_2m[idxMatin]);
+                    let ventMat = Math.round(d.hourly.wind_speed_10m[idxMatin]);
+                    let dirMatStr = getWindDirectionStr(d.hourly.wind_direction_10m[idxMatin]);
 
                     let iconApr = getWeatherIcon(d.hourly.weather_code[idxAprem], d.hourly.is_day[idxAprem] === 0);
                     let tempApr = Math.round(d.hourly.temperature_2m[idxAprem]);
+                    let ventApr = Math.round(d.hourly.wind_speed_10m[idxAprem]);
+                    let dirAprStr = getWindDirectionStr(d.hourly.wind_direction_10m[idxAprem]);
 
                     let iconNui = getWeatherIcon(d.hourly.weather_code[idxNuit], d.hourly.is_day[idxNuit] === 0);
                     let tempNui = Math.round(d.hourly.temperature_2m[idxNuit]);
+                    let ventNui = Math.round(d.hourly.wind_speed_10m[idxNuit]);
+                    let dirNuiStr = getWindDirectionStr(d.hourly.wind_direction_10m[idxNuit]);
 
                     let kpMax = kpForecast[t];
                     let kpStr = kpMax !== undefined ? kpMax : "--";
@@ -525,16 +561,19 @@
                             <span style="font-size:0.65rem; color:var(--sub)">08:00</span>
                             <span style="font-size:1.2rem;">${iconMat}</span>
                             <span style="font-size:0.9rem;">${tempMat}°</span>
+                            <span style="font-size:0.7rem; color:var(--sub); margin-top:2px; font-weight:bold;">💨 ${ventMat} <span style="font-size:0.6rem;">${dirMatStr}</span></span>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
                             <span style="font-size:0.65rem; color:var(--sub)">14:00</span>
                             <span style="font-size:1.2rem;">${iconApr}</span>
                             <span style="font-size:0.9rem; color:var(--orange)">${tempApr}°</span>
+                            <span style="font-size:0.7rem; color:var(--sub); margin-top:2px; font-weight:bold;">💨 ${ventApr} <span style="font-size:0.6rem;">${dirAprStr}</span></span>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
                             <span style="font-size:0.65rem; color:var(--sub)">22:00</span>
                             <span style="font-size:1.2rem;">${iconNui}</span>
                             <span style="font-size:0.9rem; color:var(--accent)">${tempNui}°</span>
+                            <span style="font-size:0.7rem; color:var(--sub); margin-top:2px; font-weight:bold;">💨 ${ventNui} <span style="font-size:0.6rem;">${dirNuiStr}</span></span>
                         </div>
                     </div>`;
                 }
@@ -559,15 +598,27 @@
         const sCard = document.getElementById('status-card');
 
         if (vAlt >= 45 || currentData.rainProb >= 60 || currentData.kp >= 6) {
-            sTxt.innerText = "🚫 DANGER";
+            let reasons = [];
+            if (vAlt >= 45) reasons.push("VENT");
+            if (currentData.rainProb >= 60) reasons.push("PLUIE");
+            if (currentData.kp >= 6) reasons.push("KP");
+            
+            sTxt.innerHTML = "🚫 DANGER<br><span style='font-size:12px; color:var(--sub);'>CAUSE : " + reasons.join(" + ") + "</span>";
             sTxt.style.color = "var(--red)";
             sCard.style.borderLeftColor = "var(--red)";
+            
         } else if (vAlt >= 30 || currentData.rainProb >= 30 || currentData.kp >= 4) {
-            sTxt.innerText = "⚠️ ATTENTION";
+            let reasons = [];
+            if (vAlt >= 30) reasons.push("VENT");
+            if (currentData.rainProb >= 30) reasons.push("PLUIE");
+            if (currentData.kp >= 4) reasons.push("KP");
+            
+            sTxt.innerHTML = "⚠️ ATTENTION<br><span style='font-size:12px; color:var(--sub);'>CAUSE : " + reasons.join(" + ") + "</span>";
             sTxt.style.color = "var(--orange)";
             sCard.style.borderLeftColor = "var(--orange)";
+            
         } else {
-            sTxt.innerText = "🛡️ BON POUR VOLER";
+            sTxt.innerHTML = "🛡️ BON POUR VOLER";
             sTxt.style.color = "var(--green)";
             sCard.style.borderLeftColor = "var(--green)";
         }
@@ -708,6 +759,7 @@
                 // FORMATAGE DE L'AFFICHAGE POUR UNE LISIBILITE TACTIQUE MAXIMALE
                 let rawText = result.choices[0].message.content;
                 let formattedText = rawText
+                    .replace(/\[AVERTISSEMENT\]\s*:\s*([\s\S]*)/gi, '<span style="color: var(--red); font-weight: 900; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; text-decoration: underline;">&#91;AVERTISSEMENT&#93; :</span> <span style="color: var(--red);">$1</span>')
                     .replace(/\[(.*?)\]/g, '<span style="color: var(--accent); font-weight: 900; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;">[$1]</span>')
                     .replace(/\*\*(.*?)\*\*/g, '<b style="color: #ffffff;">$1</b>')
                     .replace(/\bVERT\b/g, '<span style="color: var(--green); font-weight: 900;">VERT</span>')
