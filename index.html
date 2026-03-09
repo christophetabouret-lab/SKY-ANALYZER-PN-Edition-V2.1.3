@@ -63,6 +63,11 @@
         .compass-w { position: absolute; left: 4px; }
         .wind-needle { position: absolute; width: 10px; height: 34px; top: 50%; left: 50%; margin-top: -17px; margin-left: -5px; transition: transform 0.5s ease; display: flex; flex-direction: column; align-items: center; z-index: 10; }
 
+        /* LECTEUR RADAR PLUIE */
+        .radar-control { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--overlay); border-radius: 20px; padding: 6px 16px; display: flex; align-items: center; gap: 12px; font-weight: 900; font-size: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); display: none; border: 2px solid var(--accent); transition: background-color 0.3s; }
+        .radar-btn { background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; color: var(--text); }
+        .radar-time { color: var(--accent); font-family: monospace; font-size: 13px; min-width: 90px; text-align: center; }
+
         /* BARRE DE COUCHES SOUS LA CARTE */
         .layer-bar { display: flex; gap: 6px; margin-bottom: 15px; width: 100%; }
         .layer-btn { flex: 1; padding: 14px 0; border-radius: 12px; font-size: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; border: none; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
@@ -75,6 +80,13 @@
         .week-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; font-weight: 900; text-align: center; transition: border-color 0.3s; }
         .week-row span:first-child { text-align: left; text-transform: capitalize; font-size: 1.05rem; }
         
+        /* TIMELINE 15 MIN - AVEC MARGE DE FIN POUR LE SCROLL */
+        .nowcast-timeline { display: flex; overflow-x: auto; gap: 10px; margin-top: 10px; padding-bottom: 10px; scrollbar-width: none; }
+        .nowcast-timeline::-webkit-scrollbar { display: none; }
+        .nowcast-timeline::after { content: ''; flex: 0 0 10px; }
+        .nowcast-item { text-align: center; min-width: 45px; border-right: 1px solid var(--border); padding-right: 10px; flex-shrink: 0; }
+        .nowcast-item:last-child { border-right: none; padding-right: 0; }
+
         input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0; }
         #page-week, #page-aero { display: none; }
         .refresh-spin { animation: spin 1s ease-in-out; }
@@ -117,6 +129,11 @@
             
             <div id="map"></div>
             
+            <div id="radar-control" class="radar-control">
+                <button id="radar-play-btn" class="radar-btn" onclick="toggleRadarAnimation()">⏸</button>
+                <span id="radar-time" class="radar-time">--:--</span>
+            </div>
+
             <div class="compass-box" id="compass-box" onclick="initCompass()" title="Cliquer pour activer le gyro">
                 <div class="compass-n">N</div>
                 <div class="compass-e">E</div>
@@ -131,7 +148,7 @@
 
         <div class="layer-bar">
             <button id="openaip-btn-ui" class="layer-btn bg-on" onclick="toggleOpenAIP()">✈️ ZONES</button>
-            <button id="radar-btn-ui" class="layer-btn bg-off" onclick="toggleRadar()">🌧️ PLUIE</button>
+            <button id="radar-btn-ui" class="layer-btn bg-off" onclick="toggleRadar()">🌧️ RADAR HIST.</button>
             <button id="btn-adsb" class="layer-btn bg-off" onclick="openADSB()">⚡ AÉRIEN</button>
             <button id="btn-sound" class="layer-btn bg-off" onclick="toggleSound()">🔕 SON: OFF</button>
         </div>
@@ -161,7 +178,11 @@
                 <div style="width: 1px; height: 30px; background: var(--border);"></div>
                 <div><span id="pressure-val" style="font-size: 22px; font-weight: 900;">--</span><span class="stat-label">hPa (QFE)</span></div>
             </div>
-            <div id="forecast-3h" style="display:flex; justify-content:space-around; margin-top:10px; border-top:1px solid #eee; padding-top:10px; transition: border-color 0.3s;"></div>
+            
+            <div id="nowcast-container" style="display:none; margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
+                <span class="stat-label" style="color:var(--orange); display:block; margin-bottom:10px;">📡 SCANNER D'IMPACT PLUIE (2 HEURES)</span>
+                <div id="nowcast-timeline" class="nowcast-timeline"></div>
+            </div>
         </div>
     </div>
 
@@ -206,9 +227,13 @@
     let map, marker, openAipLayer = null;
     let currentData = { vSol:0, gSol:0, tSol:0, humSol:0, dp:0, kp:1.2, rainProb:0 };
     
+    // GESTION RADAR ANIME
     let radarLayer = null;
-    let radarInterval = null;
     let radarActive = false;
+    let radarFrames = [];
+    let radarIndex = 0;
+    let radarPlayInterval = null;
+    let isRadarPlaying = false;
 
     let adsbLayer = L.layerGroup();
     let adsbInterval = null;
@@ -277,7 +302,6 @@
         return '☁️';
     }
 
-    // FONCTION DE CONVERSION DEGRES -> POINTS CARDINAUX
     function getWindDirectionStr(degrees) {
         const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
         const index = Math.round(degrees / 45) % 8;
@@ -303,7 +327,6 @@
             if (e.key === 'Enter') searchAddress();
         });
 
-        // ÉCOUTEUR DE CLIC SUR LA CARTE
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             map.setView(e.latlng);
@@ -367,16 +390,16 @@
 
     async function toggleRadar() {
         const btn = document.getElementById('radar-btn-ui');
+        const control = document.getElementById('radar-control');
+        
         if (radarActive) { 
             radarActive = false;
-            clearInterval(radarInterval);
-            if (radarLayer) {
-                map.removeLayer(radarLayer); 
-                radarLayer = null; 
-            }
-            btn.innerText = "🌧️ PLUIE: OFF"; 
+            stopRadarAnimation();
+            if (radarLayer) { map.removeLayer(radarLayer); radarLayer = null; }
+            btn.innerText = "🌧️ RADAR HIST."; 
             btn.classList.remove('bg-on');
             btn.classList.add('bg-off');
+            control.style.display = 'none';
             return; 
         }
         
@@ -384,33 +407,73 @@
         btn.innerText = "🌧️ PLUIE: ON";
         btn.classList.remove('bg-off');
         btn.classList.add('bg-on');
+        control.style.display = 'flex';
         
-        fetchRadar();
-        radarInterval = setInterval(fetchRadar, 10 * 60 * 1000); 
+        await fetchRadarData();
     }
 
-    async function fetchRadar() {
-        if (!radarActive) return;
+    async function fetchRadarData() {
         try {
             const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json');
             const data = await resp.json();
             
-            if (!data.radar || !data.radar.past || data.radar.past.length === 0) return;
+            radarFrames = [];
+            if (data.radar && data.radar.past) radarFrames = radarFrames.concat(data.radar.past);
+            if (data.radar && data.radar.nowcast) radarFrames = radarFrames.concat(data.radar.nowcast);
             
-            const lastPath = data.radar.past[data.radar.past.length - 1].path;
+            if (radarFrames.length === 0) return;
             
-            if (radarLayer) {
-                map.removeLayer(radarLayer);
+            radarIndex = data.radar.past ? data.radar.past.length - 1 : 0;
+            
+            if (!radarLayer) {
+                radarLayer = L.tileLayer('', { opacity: 0.65, zIndex: 1001, maxNativeZoom: 7 }).addTo(map);
             }
             
-            radarLayer = L.tileLayer(`https://tilecache.rainviewer.com${lastPath}/256/{z}/{x}/{y}/2/1_1.png`, { 
-                opacity: 0.65, 
-                zIndex: 1001,
-                maxNativeZoom: 7 
-            }).addTo(map);
-        } catch(e) { 
-            console.error("Erreur actualisation pluie", e);
+            updateRadarFrame();
+            startRadarAnimation();
+        } catch(e) { console.error("Erreur pluie", e); }
+    }
+
+    function updateRadarFrame() {
+        if (!radarFrames[radarIndex]) return;
+        const frame = radarFrames[radarIndex];
+        const url = `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
+        radarLayer.setUrl(url);
+        
+        const d = new Date(frame.time * 1000);
+        const hrs = d.getHours().toString().padStart(2, '0');
+        const mins = d.getMinutes().toString().padStart(2, '0');
+        
+        const now = Date.now() / 1000;
+        const isFuture = frame.time > now;
+        
+        const timeEl = document.getElementById('radar-time');
+        timeEl.innerText = `${hrs}:${mins} ${isFuture ? '(PRÉV)' : '(HIST)'}`;
+        timeEl.style.color = isFuture ? 'var(--orange)' : 'var(--accent)';
+    }
+
+    function toggleRadarAnimation() {
+        if (isRadarPlaying) {
+            stopRadarAnimation();
+        } else {
+            startRadarAnimation();
         }
+    }
+
+    function startRadarAnimation() {
+        isRadarPlaying = true;
+        document.getElementById('radar-play-btn').innerText = '⏸';
+        radarPlayInterval = setInterval(() => {
+            radarIndex++;
+            if (radarIndex >= radarFrames.length) radarIndex = 0;
+            updateRadarFrame();
+        }, 1000); 
+    }
+
+    function stopRadarAnimation() {
+        isRadarPlaying = false;
+        document.getElementById('radar-play-btn').innerText = '▶';
+        clearInterval(radarPlayInterval);
     }
 
     async function fetchRealKP() {
@@ -462,8 +525,8 @@
                 }
             } catch(e) { console.error("Erreur forecast KP NOAA", e); }
 
-            // AJOUT DU VENT DANS LA REQUETE OPEN-METEO
-            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
+            // AJOUT DU PARAMETRE temperature_2m POUR LE SCANNER PLUIE 15 MIN
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,is_day&hourly=precipitation_probability,temperature_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m&minutely_15=precipitation_probability,precipitation,temperature_2m&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
             const d = await r.json();
             const h = new Date().getHours();
             
@@ -483,6 +546,44 @@
             document.getElementById('rain-prob').innerText = currentData.rainProb + "%";
             document.getElementById('pressure-val').innerText = Math.round(d.current.surface_pressure);
             document.getElementById('visibility-val').innerText = (d.current.visibility/1000).toFixed(1) + "km";
+
+            // GENERATION DU SCANNER PLUIE 15 MIN (AVEC LA TEMPERATURE INCLUSE)
+            if (d.minutely_15 && d.minutely_15.time) {
+                const nowMs = Date.now();
+                let nowcastHtml = "";
+                let hasNowcast = false;
+                
+                d.minutely_15.time.forEach((timeStr, idx) => {
+                    let tMs = new Date(timeStr).getTime();
+                    if(tMs >= nowMs - 900000 && tMs <= nowMs + 7200000) {
+                        hasNowcast = true;
+                        let dt = new Date(tMs);
+                        let hh = dt.getHours().toString().padStart(2, '0');
+                        let mm = dt.getMinutes().toString().padStart(2, '0');
+                        let prob = d.minutely_15.precipitation_probability[idx];
+                        let prec = d.minutely_15.precipitation[idx] || 0;
+                        let temp15m = Math.round(d.minutely_15.temperature_2m[idx]);
+                        
+                        let color = prob >= 60 ? 'var(--red)' : (prob >= 30 ? 'var(--orange)' : 'var(--green)');
+                        let iconNow = prob > 0 ? '🌧️' : (isNowNight ? '🌙' : '☁️');
+                        
+                        nowcastHtml += `<div class="nowcast-item">
+                            <div style="color:var(--sub); font-size:10px;">${hh}:${mm}</div>
+                            <div style="font-size:16px; margin:2px 0;">${iconNow}</div>
+                            <div style="color:${color}; font-weight:900; font-size:12px;">${prob}%</div>
+                            <div style="font-size:11px; font-weight:bold; margin-top:2px;">${temp15m}°</div>
+                            ${prec > 0 ? `<div style="font-size:9px; color:var(--accent); margin-top:2px;">${prec}mm</div>` : ''}
+                        </div>`;
+                    }
+                });
+                
+                if (hasNowcast) {
+                    document.getElementById('nowcast-container').style.display = 'block';
+                    document.getElementById('nowcast-timeline').innerHTML = nowcastHtml;
+                } else {
+                    document.getElementById('nowcast-container').style.display = 'none';
+                }
+            }
             
             let cc = d.current.cloud_cover || 0;
             let ccLow = d.current.cloud_cover_low || 0;
@@ -509,14 +610,6 @@
 
             document.getElementById('sunrise-val').innerText = d.daily.sunrise[0].split('T')[1];
             document.getElementById('sunset-val').innerText = d.daily.sunset[0].split('T')[1];
-            
-            const fCont = document.getElementById('forecast-3h'); fCont.innerHTML = '';
-            for(let i=1; i<=3; i++) {
-                let fHour = (h + i) % 24;
-                let fNight = d.hourly.is_day[h+i] === 0;
-                let wIcon = getWeatherIcon(d.hourly.weather_code[h+i], fNight);
-                fCont.innerHTML += `<div style="text-align:center;"><div>${fHour}h</div><div style="font-size:18px; margin:4px 0;">${wIcon}</div><div>${Math.round(d.hourly.temperature_2m[h+i])}°</div></div>`;
-            }
 
             const wCont = document.getElementById('week-container'); wCont.innerHTML = '';
             d.daily.time.forEach((t, i) => {
