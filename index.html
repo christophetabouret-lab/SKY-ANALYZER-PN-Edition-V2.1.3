@@ -282,6 +282,32 @@
         }
     }
 
+    // FONCTIONS ADDITIONNELLES POUR AZIMUT ET DISTANCE NM
+    function calculateDistanceNM(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Rayon de la terre en km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const d = R * c; 
+        return d / 1.852; // Converti en Nautiques (NM)
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+        const phi1 = lat1 * Math.PI / 180;
+        const phi2 = lat2 * Math.PI / 180;
+        const lam1 = lon1 * Math.PI / 180;
+        const lam2 = lon2 * Math.PI / 180;
+        const y = Math.sin(lam2 - lam1) * Math.cos(phi2);
+        const x = Math.cos(phi1) * Math.sin(phi2) -
+                  Math.sin(phi1) * Math.cos(phi2) * Math.cos(lam2 - lam1);
+        let theta = Math.atan2(y, x);
+        let brng = (theta * 180 / Math.PI + 360) % 360; 
+        return brng;
+    }
+
     function getDecodedAlt(limit) {
         if (!limit || (limit.value === 0 && limit.referenceDatum === 0)) return "SFC";
         if (limit.unit === 6) return "FL" + limit.value;
@@ -311,7 +337,8 @@
     function initApp() {
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.83, 4.36], 13);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // SERVEUR CARTODB VOYAGER (SANS ERREUR 403)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
         openAipLayer = L.tileLayer('https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey=' + OPENAIP_KEY, {
             subdomains: ['a', 'b', 'c'],
@@ -479,9 +506,26 @@
     async function fetchRealKP() {
         try {
             const resp = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+            if (!resp.ok) throw new Error("Réseau NOAA indisponible");
             const data = await resp.json();
-            const lastEntry = data[data.length - 1];
-            const kpValue = parseFloat(lastEntry[1]);
+            
+            let kpValue = NaN;
+            
+            // Parcours des données de la fin vers le début (en évitant la ligne 0 qui est l'en-tête)
+            for (let i = data.length - 1; i >= 1; i--) {
+                if (data[i] && data[i].length > 1) {
+                    // parseFloat fonctionne de manière sûre, que ce soit un texte "2.33" ou un nombre pur 2.33
+                    let val = parseFloat(data[i][1]); 
+                    if (!isNaN(val)) {
+                        kpValue = val;
+                        break;
+                    }
+                }
+            }
+
+            // Si aucune donnée numérique valide n'a été trouvée
+            if (isNaN(kpValue)) throw new Error("Donnée Kp valide introuvable dans le JSON");
+
             currentData.kp = kpValue;
             
             const kpEl = document.getElementById('kp-val');
@@ -494,10 +538,14 @@
             } else {
                 kpEl.style.color = "inherit"; 
             }
+            
             runAnalysis();
         } catch(e) {
-            console.error("Erreur de récupération du KP", e);
+            console.error("Erreur de récupération du KP:", e);
+            // Fallback de sécurité robuste pour ne pas bloquer les autres alertes (Vent/Pluie)
+            currentData.kp = 1.2; 
             document.getElementById('kp-val').innerText = "N/A";
+            runAnalysis(); 
         }
     }
 
@@ -723,13 +771,14 @@
         const pos = marker.getLatLng();
         
         report.style.display = 'block';
-        content.innerHTML = "<span style='color:var(--accent); font-weight:bold;'>>> DOUBLE ACQUISITION EN COURS...</span>\n- ESPACES (RAYON 2 KM)\n- AÉROPORTS/HÉLISTATIONS (RAYON 10 KM)";
+        content.innerHTML = "<span style='color:var(--accent); font-weight:bold;'>>> DOUBLE ACQUISITION EN COURS...</span>\n- ESPACES (RAYON 2 KM)\n- AÉROPORTS/HÉLISTATIONS (RAYON 30 KM)";
 
         let zonesAero = "";
         let infosAero = "";
         
+        // MODIFICATION ICI : Delta de 0.27 degrés pour correspondre à ~30 kilomètres
         const bboxAirspaces = `${pos.lng - 0.02},${pos.lat - 0.02},${pos.lng + 0.02},${pos.lat + 0.02}`;
-        const bboxAirports = `${pos.lng - 0.09},${pos.lat - 0.09},${pos.lng + 0.09},${pos.lat + 0.09}`;
+        const bboxAirports = `${pos.lng - 0.27},${pos.lat - 0.27},${pos.lng + 0.27},${pos.lat + 0.27}`;
 
         try {
             const urlZones = `https://api.core.openaip.net/api/airspaces?bbox=${bboxAirspaces}&apiKey=${OPENAIP_KEY}`;
@@ -775,14 +824,25 @@
                         } else if(i.type === 4 || n.includes('ULM')) {
                             typeText = "Base ULM (Trafic ULM/Léger)";
                         }
-                        return `- INFRA: ${i.name} | TYPE: ${typeText} | OACI: ${i.icaoCode || "N/A"}`;
+
+                        let posInfo = "";
+                        if (i.geometry && i.geometry.coordinates) {
+                            let aeroLon = i.geometry.coordinates[0];
+                            let aeroLat = i.geometry.coordinates[1];
+                            let distNM = calculateDistanceNM(aeroLat, aeroLon, pos.lat, pos.lng).toFixed(1);
+                            let qdr = Math.round(calculateBearing(aeroLat, aeroLon, pos.lat, pos.lng)).toString().padStart(3, '0');
+                            posInfo = ` | POS: ${distNM} NM / QDR ${qdr}°`;
+                        }
+
+                        return `- INFRA: ${i.name} | TYPE: ${typeText} | OACI: ${i.icaoCode || "N/A"}${posInfo}`;
                     }).join('\n');
                 }
             }
         } catch(e) { console.error("Erreur aéroports", e); }
 
         try {
-            const overpassQuery = `[out:json];nwr["amenity"="hospital"](${pos.lat - 0.09},${pos.lng - 0.09},${pos.lat + 0.09},${pos.lng + 0.09});out center;`;
+            // MODIFICATION ICI : Delta de 0.27 degrés pour correspondre à ~30 kilomètres pour la requête OpenStreetMap
+            const overpassQuery = `[out:json];nwr["amenity"="hospital"](${pos.lat - 0.27},${pos.lng - 0.27},${pos.lat + 0.27},${pos.lng + 0.27});out center;`;
             const urlOSM = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
             const resOSM = await fetch(urlOSM);
             if (resOSM.ok) {
@@ -790,7 +850,15 @@
                 if(dataOSM.elements && dataOSM.elements.length > 0) {
                     let osmInfos = dataOSM.elements.map(h => {
                         let nomHosp = (h.tags && h.tags.name ? h.tags.name : "CENTRE HOSPITALIER NON NOMMÉ").toUpperCase();
-                        return `- INFRA: ${nomHosp} | TYPE: Hélistation / SAMU / Hôpital (Trafic HÉLICOPTÈRE EXCLUSIF) | OACI: NON-PUBLIÉ`;
+                        
+                        let posInfo = "";
+                        if (h.lat && h.lon) {
+                            let distNM = calculateDistanceNM(h.lat, h.lon, pos.lat, pos.lng).toFixed(1);
+                            let qdr = Math.round(calculateBearing(h.lat, h.lon, pos.lat, pos.lng)).toString().padStart(3, '0');
+                            posInfo = ` | POS: ${distNM} NM / QDR ${qdr}°`;
+                        }
+
+                        return `- INFRA: ${nomHosp} | TYPE: Hélistation / SAMU / Hôpital (Trafic HÉLICOPTÈRE EXCLUSIF) | OACI: NON-PUBLIÉ${posInfo}`;
                     }).join('\n');
                     if(infosAero !== "") infosAero += "\n";
                     infosAero += osmInfos;
@@ -798,26 +866,26 @@
             }
         } catch(e) { console.error("Erreur OSM Hopitaux", e); }
 
-        let payloadData = `ESPACES AÉRIENS (< 2KM) :\n${zonesAero || "Aucun espace contrôlé direct."}\n\nINFRASTRUCTURES DE SURFACE (RAYON 10 KM) :\n${infosAero || "Aucune infrastructure à moins de 10 km."}`;
+        let payloadData = `ESPACES AÉRIENS (< 2KM) :\n${zonesAero || "Aucun espace contrôlé direct."}\n\nINFRASTRUCTURES DE SURFACE (RAYON 30 KM) :\n${infosAero || "Aucune infrastructure à moins de 30 km."}`;
 
         content.innerHTML = "<span style='color:var(--accent); font-weight:bold;'>>> ANALYSE TACTIQUE IA EN COURS...</span>";
 
         const systemMessage = `Tu es l'Officier de Renseignement Aérien du Tactical PC SKY ANALYZER. Ton expertise est la réglementation UAS/Aéronautique en France.
 
-        MISSION : Analyser la viabilité et les risques d'un vol de drone (max 500m). Tu reçois deux types de données : les espaces aériens dans un rayon de 2 km, et les aéroports/hélistations dans un rayon de 10 km.
+        MISSION : Analyser la viabilité et les risques d'un vol de drone (max 500m). Tu reçois deux types de données : les espaces aériens dans un rayon de 2 km, et les aéroports/hélistations dans un rayon de 30 km.
 
         RÈGLES D'INTERPRÉTATION FRANÇAISES STRICTES :
         1. ESPACES : Note bien le PLAFOND fourni.
         2. ZONE P (Interdite) = Statut ROUGE.
         3. ZONE R (Réglementée) = Préciser s'il s'agit d'une zone locale ou RTBA. Statut ORANGE.
-        4. INFRASTRUCTURES DANS LES 10 KM : Utilise ces données pour alerter sur le **trafic probable**. Si c'est un aérodrome à activité mixte, rappelle le risque de croiser des avions, des ULM ou des planeurs en approche/départ. Si c'est une hélistation, insiste sur le SAMU/Sécurité Civile.
+        4. INFRASTRUCTURES DANS LES 30 KM : Utilise ces données pour alerter sur le trafic probable. **Affiche OBLIGATOIREMENT la distance (NM) et l'azimut (QDR) pour chaque infrastructure, exactement tels qu'ils te sont fournis dans les données brutes.** Si c'est un aérodrome à activité mixte, rappelle le risque de croiser des avions, des ULM ou des planeurs. Si c'est une hélistation, insiste sur le SAMU/Sécurité Civile.
         5. TÉLÉPHONES GESTIONNAIRES : Ne tente pas d'inventer des numéros de téléphone. Indique toujours de chercher le numéro officiel sur la CARTE VAC.
         6. TON TACTIQUE : Concis et factuel.
 
         FORMAT DE SORTIE OBLIGATOIRE :
         [STATUT DU SECTEUR] : (VERT, ORANGE ou ROUGE)
         [ZONES STRICTES < 2km] : (Espaces aériens limitrophes, avec Plancher/Plafond)
-        [MENACE TRAFIC < 10km] : (Aéroports, pistes et Hélistations environnants avec leurs activités potentielles)
+        [MENACE TRAFIC < 30km] : (Lister TOUTES les infrastructures fournies, en incluant obligatoirement la DISTANCE en NM et le QDR pour chacune, et leurs activités potentielles)
         [ANALYSE DE RISQUE TACTIQUE] : (Synthèse)
         [ACTIONS MANUELLES REQUISES] : (Lister impérativement : 1. Rechercher le TÉLÉPHONE du gestionnaire sur la CARTE VAC pour l'aviser de l'opération. 2. Lecture NOTAM. 3. Vérification carte ZICAD. 4. Vérification AZBA uniquement si zone R suspecte. 5. Vigie trafic aérien visuelle et auditive)
         [AVERTISSEMENT] : (Rappeler impérativement que cette synthèse est générée par une IA, qu'elle peut contenir des erreurs, et que le télépilote doit systématiquement vérifier les sources officielles.)`;
